@@ -1,0 +1,2 @@
+curl http://localhost:8090/s -X POST -H "Content-Type: application/json" -d '{"email": "test@co.jp", "name": "taro", "password": "test"}'
+curl http://localhost:8090/s/auth -X POST -H "Content-Type: application/json" -d '{"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaXNzIjoiX19pbml0X18ifQ.dyHcedrxIE5VNBcTHlMd-2L0bqc8GpszJrrLVxSSyqU"}'

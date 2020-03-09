@@ -1,0 +1,9 @@
+{
+    "auth": { "id": 1},
+    "comments": [
+      { "id": 1, "body": "some comment", "postId": 1 }
+    ],
+    "profile": { "name": "test" },
+    "profile2": { "name": "test" },
+    "test": { "name": "typicode" }
+  }
