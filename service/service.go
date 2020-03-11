@@ -1,28 +1,60 @@
 package service
 
 import (
+	"errors"
+
 	"github.com/SeijiOmi/posts-service/db"
 	"github.com/SeijiOmi/posts-service/entity"
+	"github.com/jmcvetta/napping"
 )
 
 // Behavior 投稿サービスを提供するメソッド群
 type Behavior struct{}
 
+// User オブジェクト構造
+type User struct {
+	id   int
+	name string
+}
+
 // GetAll 投稿全件を取得
 func (b Behavior) GetAll() ([]entity.Post, error) {
 	db := db.GetDB()
-	var u []entity.Post
+	var post []entity.Post
 
-	if err := db.Find(&u).Error; err != nil {
+	if err := db.Find(&post).Error; err != nil {
 		return nil, err
 	}
 
-	return u, nil
+	return post, nil
+}
+
+// GetAllWithUserData 投稿情報にユーザ情報を紐づけて取得
+func (b Behavior) GetAllWithUserData() ([]entity.PostWithUser, error) {
+	posts, err := b.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	users := getUsersData()
+
+	var returnData []entity.PostWithUser
+	for _, post := range posts {
+		returnData = append(returnData, entity.PostWithUser{Post: post, User: *users[int(post.UserID)]})
+	}
+
+	return returnData, err
 }
 
 // CreateModel 投稿情報の生成
-func (b Behavior) CreateModel(inputPost entity.Post) (entity.Post, error) {
+func (b Behavior) CreateModel(inputPost entity.Post, token string) (entity.Post, error) {
+	userID, err := getUserIDByToken(token)
+	if err != nil {
+		return inputPost, err
+	}
+
 	createPost := inputPost
+	createPost.UserID = uint(userID)
 	db := db.GetDB()
 
 	if err := db.Create(&createPost).Error; err != nil {
@@ -30,6 +62,29 @@ func (b Behavior) CreateModel(inputPost entity.Post) (entity.Post, error) {
 	}
 
 	return createPost, nil
+}
+
+// SetHelpUserID 投稿情報のHlpUserIDにTokenから取得したユーザＩＤを格納する。
+func (b Behavior) SetHelpUserID(id string, token string) (entity.Post, error) {
+	findPost, userID, err := authAndGetPost(id, token)
+	if err != nil {
+		return entity.Post{}, err
+	}
+
+	findPost.HelperUserID = uint(userID)
+
+	return updatePostExec(&findPost)
+}
+
+// TakeHelpUserID 投稿情報のHlpUserIDにTokenから取得したユーザＩＤを格納する。
+func (b Behavior) TakeHelpUserID(id string, token string) (entity.Post, error) {
+	findPost, _, err := authAndGetPost(id, token)
+	if err != nil {
+		return entity.Post{}, err
+	}
+	findPost.HelperUserID = 0
+
+	return updatePostExec(&findPost)
 }
 
 // GetByID IDを元に投稿1件を取得
@@ -46,17 +101,15 @@ func (b Behavior) GetByID(id string) (entity.Post, error) {
 
 // UpdateByID 指定されたidをinputPost通りに更新
 func (b Behavior) UpdateByID(id string, inputPost entity.Post) (entity.Post, error) {
-	db := db.GetDB()
-	var findPost entity.Post
-	if err := db.Where("id = ?", id).First(&findPost).Error; err != nil {
+	findPost, err := b.GetByID(id)
+	if err != nil {
 		return findPost, err
 	}
 
-	updatePost := inputPost
-	updatePost.ID = findPost.ID
-	db.Save(&updatePost)
+	updatePostData := inputPost
+	updatePostData.ID = findPost.ID
 
-	return updatePost, nil
+	return updatePostExec(&updatePostData)
 }
 
 // DeleteByID 指定されたidを削除
@@ -69,4 +122,70 @@ func (b Behavior) DeleteByID(id string) error {
 	}
 
 	return nil
+}
+
+func getUsersData() map[int]*entity.User {
+	var response []map[string]interface{}
+	error := struct {
+		Error string
+	}{}
+	_, err := napping.Get("http://user:8080/users", nil, &response, &error)
+	if err != nil {
+		panic(err)
+	}
+
+	users := map[int]*entity.User{}
+	for _, val := range response {
+		floatID, ok := val["id"].(float64)
+		if !ok {
+			panic("User id no exist")
+		}
+		id := int(floatID)
+		name, _ := val["name"].(string)
+		users[id] = &entity.User{ID: id, Name: name}
+	}
+	return users
+}
+
+func authAndGetPost(id string, token string) (entity.Post, int, error) {
+	userID, err := getUserIDByToken(token)
+	if err != nil {
+		return entity.Post{}, 0, err
+	}
+
+	var b Behavior
+	post, err := b.GetByID(id)
+	return post, userID, err
+}
+
+func updatePostExec(post *entity.Post) (entity.Post, error) {
+	db := db.GetDB()
+	db.Save(post)
+
+	return *post, nil
+}
+
+func getUserIDByToken(token string) (int, error) {
+	input := struct {
+		Token string `json:"token"`
+	}{
+		token,
+	}
+	response := struct {
+		ID int
+	}{}
+	error := struct {
+		Error string
+	}{}
+
+	resp, err := napping.Post("http://user:8080/users/auth", &input, &response, &error)
+
+	if err != nil {
+		return 0, err
+	}
+	if resp.Status() == 403 {
+		return 0, errors.New("token invalid")
+	}
+
+	return response.ID, nil
 }
