@@ -66,18 +66,13 @@ func Show(c *gin.Context) {
 
 // SetHelpUser action: PUT /posts/sethelpuser
 func SetHelpUser(c *gin.Context) {
-	type requestStru struct {
-		ID    float64 `json:"id"`
-		Token string  `json:"token"`
-	}
-	var request requestStru
-	if err := bindJSON(c, &request); err != nil {
+	id, token, err := helpUserGetData(c)
+	if err != nil {
 		return
 	}
-	fmt.Println(request)
 
 	var b service.Behavior
-	p, err := b.SetHelpUserID(strconv.Itoa(int(request.ID)), request.Token)
+	p, err := b.SetHelpUserID(id, token)
 
 	if err != nil {
 		c.AbortWithStatus(400)
@@ -85,6 +80,37 @@ func SetHelpUser(c *gin.Context) {
 	} else {
 		c.JSON(200, p)
 	}
+}
+
+// TakeHelpUser action: PUT /posts/takehelpuser
+func TakeHelpUser(c *gin.Context) {
+	id, token, err := helpUserGetData(c)
+	if err != nil {
+		return
+	}
+
+	var b service.Behavior
+	p, err := b.TakeHelpUserID(id, token)
+
+	if err != nil {
+		c.AbortWithStatus(400)
+		fmt.Println(err)
+	} else {
+		c.JSON(200, p)
+	}
+}
+
+func helpUserGetData(c *gin.Context) (string, string, error) {
+	type requestStru struct {
+		ID    float64 `json:"id"`
+		Token string  `json:"token"`
+	}
+	var request requestStru
+	if err := bindJSON(c, &request); err != nil {
+		return "", "", err
+	}
+
+	return strconv.Itoa(int(request.ID)), request.Token, nil
 }
 
 // Update action: PUT /posts/:id

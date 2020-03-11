@@ -46,6 +46,7 @@ func router() *gin.Engine {
 		u.GET("/:id", controller.Show)
 		u.POST("", controller.Create)
 		u.PUT("/sethelpuser", controller.SetHelpUser)
+		u.PUT("/takehelpuser", controller.TakeHelpUser)
 		u.PUT("/update/:id", controller.Update)
 		u.DELETE("/:id", controller.Delete)
 	}
