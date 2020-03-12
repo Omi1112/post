@@ -44,14 +44,48 @@ func teardown() {
 */
 
 func TestGetAll(t *testing.T) {
-	createDefaultPost()
-	createDefaultPost()
 	initPostTable()
+	createDefaultPost(1, 0)
+	createDefaultPost(1, 0)
 
-	// var b Behavior
-	// posts, err := b.GetAll()
-	assert.Equal(t, nil, nil)
-	// assert.Equal(t, len(posts), 2)
+	var b Behavior
+	posts, err := b.GetAll()
+	assert.Equal(t, err, nil)
+	assert.Equal(t, len(posts), 2)
+}
+
+func TestGetByHelperUserID(t *testing.T) {
+	initPostTable()
+	createDefaultPost(1, 1)
+	createDefaultPost(1, 2)
+
+	var b Behavior
+	posts, err := b.GetByHelperUserID("1")
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 1, len(posts))
+}
+
+func TestAttachUserData(t *testing.T) {
+	initPostTable()
+	post := createDefaultPost(1, 0)
+	var posts []entity.Post
+	posts = append(posts, post)
+
+	postsWithUser, err := attachUserData(posts)
+	assert.Equal(t, nil, err)
+	assert.NotEqual(t, "", postsWithUser[0].User.Name)
+}
+
+func TestGetByHelperUserIDWithUserData(t *testing.T) {
+	initPostTable()
+	createDefaultPost(1, 1)
+	createDefaultPost(1, 2)
+
+	var b Behavior
+	postsWithUser, err := b.GetByHelperUserIDWithUserData("1")
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 1, len(postsWithUser))
+	assert.NotEqual(t, "", postsWithUser[0].User.Name)
 }
 
 // func TestCreateModel(t *testing.T) {
@@ -149,9 +183,11 @@ func TestGetAll(t *testing.T) {
 // 	assert.Equal(t, beforeCount, afterCount)
 // }
 
-func createDefaultPost() entity.Post {
+func createDefaultPost(userID uint, helpserUserID uint) entity.Post {
 	db := db.GetDB()
 	post := postDefault
+	post.UserID = userID
+	post.HelperUserID = helpserUserID
 	db.Create(&post)
 	return post
 }
