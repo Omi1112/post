@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"strconv"
 
 	"github.com/SeijiOmi/posts-service/db"
 	"github.com/SeijiOmi/posts-service/entity"
@@ -36,14 +37,29 @@ func (b Behavior) GetAllWithUserData() ([]entity.PostWithUser, error) {
 		return nil, err
 	}
 
-	users := getUsersData()
+	return attachUserData(posts)
+}
 
-	var returnData []entity.PostWithUser
-	for _, post := range posts {
-		returnData = append(returnData, entity.PostWithUser{Post: post, User: *users[int(post.UserID)]})
+// GetByHelperUserID 投稿情報にユーザ情報を紐づけて取得
+func (b Behavior) GetByHelperUserID(userID string) ([]entity.Post, error) {
+	db := db.GetDB()
+	var post []entity.Post
+
+	if err := db.Where("helper_user_id = ?", userID).Find(&post).Error; err != nil {
+		return post, err
 	}
 
-	return returnData, err
+	return post, nil
+}
+
+// GetByHelperUserIDWithUserData 投稿情報にユーザ情報を紐づけて取得
+func (b Behavior) GetByHelperUserIDWithUserData(userID string) ([]entity.PostWithUser, error) {
+	posts, err := b.GetByHelperUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return attachUserData(posts)
 }
 
 // CreateModel 投稿情報の生成
@@ -188,4 +204,19 @@ func getUserIDByToken(token string) (int, error) {
 	}
 
 	return response.ID, nil
+}
+
+func attachUserData(posts []entity.Post) ([]entity.PostWithUser, error) {
+	users := getUsersData()
+
+	var returnData []entity.PostWithUser
+	for _, post := range posts {
+		if post.UserID == 0 {
+			idStr := strconv.Itoa(int(post.ID))
+			return []entity.PostWithUser{}, errors.New("postID:" + idStr + " don't have userID")
+		}
+		returnData = append(returnData, entity.PostWithUser{Post: post, User: *users[int(post.UserID)]})
+	}
+
+	return returnData, nil
 }

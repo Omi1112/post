@@ -64,55 +64,6 @@ func Show(c *gin.Context) {
 	}
 }
 
-// SetHelpUser action: PUT /posts/sethelpuser
-func SetHelpUser(c *gin.Context) {
-	id, token, err := helpUserGetData(c)
-	if err != nil {
-		return
-	}
-
-	var b service.Behavior
-	p, err := b.SetHelpUserID(id, token)
-
-	if err != nil {
-		c.AbortWithStatus(400)
-		fmt.Println(err)
-	} else {
-		c.JSON(200, p)
-	}
-}
-
-// TakeHelpUser action: PUT /posts/takehelpuser
-func TakeHelpUser(c *gin.Context) {
-	id, token, err := helpUserGetData(c)
-	if err != nil {
-		return
-	}
-
-	var b service.Behavior
-	p, err := b.TakeHelpUserID(id, token)
-
-	if err != nil {
-		c.AbortWithStatus(400)
-		fmt.Println(err)
-	} else {
-		c.JSON(200, p)
-	}
-}
-
-func helpUserGetData(c *gin.Context) (string, string, error) {
-	type requestStru struct {
-		ID    float64 `json:"id"`
-		Token string  `json:"token"`
-	}
-	var request requestStru
-	if err := bindJSON(c, &request); err != nil {
-		return "", "", err
-	}
-
-	return strconv.Itoa(int(request.ID)), request.Token, nil
-}
-
 // Update action: PUT /posts/:id
 func Update(c *gin.Context) {
 	id := c.Params.ByName("id")
@@ -143,6 +94,72 @@ func Delete(c *gin.Context) {
 	} else {
 		c.JSON(204, gin.H{"id #" + id: "deleted"})
 	}
+}
+
+// HelperShow action: get /helpser/:id
+func HelperShow(c *gin.Context) {
+	id := c.Params.ByName("id")
+
+	var b service.Behavior
+	fmt.Println(id)
+	p, err := b.GetByHelperUserIDWithUserData(id)
+
+	if err != nil {
+		c.AbortWithStatus(400)
+		fmt.Println(err)
+	} else {
+		c.JSON(200, p)
+	}
+}
+
+// SetHelpUser action: Post /helper
+func SetHelpUser(c *gin.Context) {
+	id, token, err := helpUserGetData(c)
+	if err != nil {
+		return
+	}
+
+	var b service.Behavior
+	p, err := b.SetHelpUserID(id, token)
+
+	if err != nil {
+		c.AbortWithStatus(400)
+		fmt.Println(err)
+	} else {
+		c.JSON(200, p)
+	}
+}
+
+// TakeHelpUser action: delete /helper
+func TakeHelpUser(c *gin.Context) {
+	id := c.Params.ByName("id")
+	_, token, err := helpUserGetData(c)
+	if err != nil {
+		return
+	}
+
+	var b service.Behavior
+	p, err := b.TakeHelpUserID(id, token)
+
+	if err != nil {
+		c.AbortWithStatus(400)
+		fmt.Println(err)
+	} else {
+		c.JSON(200, p)
+	}
+}
+
+func helpUserGetData(c *gin.Context) (string, string, error) {
+	type requestStru struct {
+		ID    float64 `json:"id"`
+		Token string  `json:"token"`
+	}
+	var request requestStru
+	if err := bindJSON(c, &request); err != nil {
+		return "", "", err
+	}
+
+	return strconv.Itoa(int(request.ID)), request.Token, nil
 }
 
 func bindJSON(c *gin.Context, data interface{}) error {

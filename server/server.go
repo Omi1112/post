@@ -40,15 +40,20 @@ func router() *gin.Engine {
 		},
 	}))
 
-	u := r.Group("/posts")
+	p := r.Group("/posts")
 	{
-		u.GET("", controller.Index)
-		u.GET("/:id", controller.Show)
-		u.POST("", controller.Create)
-		u.PUT("/sethelpuser", controller.SetHelpUser)
-		u.PUT("/takehelpuser", controller.TakeHelpUser)
-		u.PUT("/update/:id", controller.Update)
-		u.DELETE("/:id", controller.Delete)
+		p.GET("", controller.Index)
+		p.GET("/:id", controller.Show)
+		p.POST("", controller.Create)
+		p.PUT("/:id", controller.Update)
+		p.DELETE("/:id", controller.Delete)
+	}
+
+	h := r.Group("/helper")
+	{
+		h.GET("/:id", controller.HelperShow)
+		h.POST("", controller.SetHelpUser)
+		h.DELETE("/:id", controller.TakeHelpUser)
 	}
 
 	return r
