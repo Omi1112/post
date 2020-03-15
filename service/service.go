@@ -2,6 +2,8 @@ package service
 
 import (
 	"errors"
+	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/SeijiOmi/posts-service/db"
@@ -145,7 +147,8 @@ func getUsersData() map[int]*entity.User {
 	error := struct {
 		Error string
 	}{}
-	_, err := napping.Get("http://user:8080/users", nil, &response, &error)
+	baseURL := os.Getenv("USER_URL")
+	_, err := napping.Get(baseURL+"/users", nil, &response, &error)
 	if err != nil {
 		panic(err)
 	}
@@ -182,11 +185,6 @@ func updatePostExec(post *entity.Post) (entity.Post, error) {
 }
 
 func getUserIDByToken(token string) (int, error) {
-	input := struct {
-		Token string `json:"token"`
-	}{
-		token,
-	}
 	response := struct {
 		ID int
 	}{}
@@ -194,12 +192,14 @@ func getUserIDByToken(token string) (int, error) {
 		Error string
 	}{}
 
-	resp, err := napping.Post("http://user:8080/users/auth", &input, &response, &error)
+	baseURL := os.Getenv("USER_URL")
+	resp, err := napping.Get(baseURL+"/auth/"+token, nil, &response, &error)
 
 	if err != nil {
 		return 0, err
 	}
-	if resp.Status() == 403 {
+
+	if resp.Status() == http.StatusBadRequest {
 		return 0, errors.New("token invalid")
 	}
 

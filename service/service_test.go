@@ -15,8 +15,8 @@ import (
 */
 
 var client = new(http.Client)
-
-var postDefault = entity.Post{Body: "test", UserID: 1}
+var postDefault = entity.Post{Body: "test", Point: 100}
+var tmpBaseUserURL string
 
 // テストを統括するテスト時には、これが実行されるイメージでいる。
 func TestMain(m *testing.M) {
@@ -30,12 +30,16 @@ func TestMain(m *testing.M) {
 
 // テスト実施前共通処理
 func setup() {
+	tmpBaseUserURL = os.Getenv("USER_URL")
+	os.Setenv("USER_URL", "http://post-mock-user:3000")
 	db.Init()
 	initPostTable()
 }
 
 // テスト実施後共通処理
 func teardown() {
+	os.Setenv("USER_URL", tmpBaseUserURL)
+	initPostTable()
 	db.Close()
 }
 
@@ -88,100 +92,15 @@ func TestGetByHelperUserIDWithUserData(t *testing.T) {
 	assert.NotEqual(t, "", postsWithUser[0].User.Name)
 }
 
-// func TestCreateModel(t *testing.T) {
-// 	var b Behavior
-// 	post, err := b.CreateModel(postDefault)
+func TestValidCreateModel(t *testing.T) {
+	var b Behavior
+	post, err := b.CreateModel(postDefault, "testToken")
 
-// 	assert.Equal(t, nil, err)
-// 	assert.Equal(t, postDefault.Name, post.Name)
-// 	assert.Equal(t, postDefault.Email, post.Email)
-// 	assert.NotEqual(t, postDefault.Password, post.Password)
-// 	err = bcrypt.CompareHashAndPassword([]byte(post.Password), []byte(postDefault.Password))
-// 	assert.Equal(t, nil, err)
-// }
-
-// func TestGetByIDExists(t *testing.T) {
-// 	post := createDefaultPost()
-// 	var b Behavior
-// 	post, err := b.GetByID(strconv.Itoa(int(post.ID)))
-
-// 	assert.Equal(t, nil, err)
-// 	assert.Equal(t, postDefault.Name, post.Name)
-// 	assert.Equal(t, postDefault.Email, post.Email)
-// }
-
-// func TestGetByIDNotExists(t *testing.T) {
-// 	var b Behavior
-// 	post, err := b.GetByID(string(postDefault.ID))
-
-// 	assert.NotEqual(t, nil, err)
-// 	var nilPost entity.Post
-// 	assert.Equal(t, nilPost, post)
-// }
-
-// func TestUpdateByIDExists(t *testing.T) {
-// 	post := createDefaultPost()
-
-// 	updatePost := entity.Post{Name: "not", Email: "not@co.jp", Password: "notpassword"}
-
-// 	var b Behavior
-// 	post, err := b.UpdateByID(strconv.Itoa(int(post.ID)), updatePost)
-
-// 	assert.Equal(t, nil, err)
-// 	assert.Equal(t, updatePost.Name, post.Name)
-// 	assert.Equal(t, updatePost.Email, post.Email)
-// 	assert.NotEqual(t, updatePost.Password, post.Password)
-// 	err = bcrypt.CompareHashAndPassword([]byte(post.Password), []byte(updatePost.Password))
-// 	assert.Equal(t, nil, err)
-// }
-
-// func TestUpdateByIDNotExists(t *testing.T) {
-// 	post := createDefaultPost()
-
-// 	updatePost := entity.Post{Name: "not", Email: "not@co.jp", Password: "notpassword"}
-
-// 	var b Behavior
-// 	post, err := b.UpdateByID("0", updatePost)
-
-// 	assert.NotEqual(t, nil, err)
-// 	var nilPost entity.Post
-// 	assert.Equal(t, nilPost, post)
-// }
-
-// func TestDeleteByIDExists(t *testing.T) {
-// 	post := createDefaultPost()
-
-// 	db := db.GetDB()
-// 	var beforeCount int
-// 	db.Table("posts").Count(&beforeCount)
-
-// 	var b Behavior
-// 	err := b.DeleteByID(strconv.Itoa(int(post.ID)))
-
-// 	var afterCount int
-// 	db.Table("posts").Count(&afterCount)
-
-// 	assert.Equal(t, nil, err)
-// 	assert.Equal(t, beforeCount-1, afterCount)
-// }
-
-// func TestDeleteByIDNotExists(t *testing.T) {
-// 	initPostTable()
-// 	createDefaultPost()
-
-// 	db := db.GetDB()
-// 	var beforeCount int
-// 	db.Table("posts").Count(&beforeCount)
-
-// 	var b Behavior
-// 	err := b.DeleteByID("0")
-
-// 	var afterCount int
-// 	db.Table("posts").Count(&afterCount)
-
-// 	assert.Equal(t, nil, err)
-// 	assert.Equal(t, beforeCount, afterCount)
-// }
+	assert.Equal(t, nil, err)
+	assert.Equal(t, postDefault.Body, post.Body)
+	assert.Equal(t, postDefault.Point, post.Point)
+	assert.NotEqual(t, uint(0), post.UserID)
+}
 
 func createDefaultPost(userID uint, helpserUserID uint) entity.Post {
 	db := db.GetDB()

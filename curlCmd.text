@@ -1,2 +1,3 @@
 curl http://localhost:8090/posts -X POST -H "Content-Type: application/json" -d '{"token": "1616456215346346dfasdfasdfs", "body": "test"}'
 curl http://localhost:8090/posts/sethelpuser -X PUT -H "Content-Type: application/json" -d '{"token": "1616456215346346dfasdfasdfs", "id": 23}'
+curl http://post-mock-user:3000/auth

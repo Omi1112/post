@@ -1,9 +1,11 @@
 {
-    "auth": { "id": 1 },
+    "auth": {
+      "ID": 1
+    },
     "comments": [
       { "id": 1, "body": "some comment", "postId": 1 }
     ],
-    "getAll": [
+    "users": [
       { "id": 1, "name": "taro"},
       { "id": 2, "name": "yamada"},
       { "id": 3, "name": "itoko"},
