@@ -6,4 +6,5 @@ type Post struct {
 	UserID       uint   `json:"userId"`
 	HelperUserID uint   `json:"helpserUserId"`
 	Body         string `json:"body"`
+	Point        uint   `json:"point" binding:"numeric,min=0"`
 }

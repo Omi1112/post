@@ -44,15 +44,15 @@ services:
       - ./logs:/var/log/mysql
     networks:
       - my_network
-  # user-server:
-  #   build: ./docker/json-server
-  #   # container_name: test-json-server
-  #   ports:
-  #     - '3000:3000'
-  #   volumes:
-  #     # - ./docker/json-server/db.json:/data/db.json
-  #     - ./docker/json-server/:/data/
-  #   command: json-server -w db.json -m middleware.js --host 0.0.0.0
+  post-mock-user:
+    build: ./docker/json-server
+    ports:
+      - '3010:3000'
+    volumes:
+      - ./docker/json-server/:/data/
+    command: json-server -w db.json --routes route.json -m middleware.js --host 0.0.0.0
+    networks:
+      - my_network
 
 
 networks:
