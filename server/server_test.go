@@ -21,6 +21,7 @@ var client = new(http.Client)
 var testServer *httptest.Server
 var postDefault = entity.Post{Body: "test", Point: 100}
 var tmpBaseUserURL string
+var tmpBasePointURL string
 
 // テストを統括するテスト時には、これが実行されるイメージでいる。
 func TestMain(m *testing.M) {
@@ -35,7 +36,9 @@ func TestMain(m *testing.M) {
 // テスト実施前共通処理
 func setup() {
 	tmpBaseUserURL = os.Getenv("USER_URL")
+	tmpBasePointURL = os.Getenv("POINT_URL")
 	os.Setenv("USER_URL", "http://post-mock-user:3000")
+	os.Setenv("POINT_URL", "http://post-mock-point:3000")
 	db.Init()
 	router := router()
 	testServer = httptest.NewServer(router)
@@ -47,6 +50,7 @@ func teardown() {
 	initPostTable()
 	db.Close()
 	os.Setenv("USER_URL", tmpBaseUserURL)
+	os.Setenv("POINT_URL", tmpBasePointURL)
 }
 
 /*
@@ -92,6 +96,50 @@ func TestPostCreateMinusErrValid(t *testing.T) {
 	input, _ := json.Marshal(inputPost)
 	resp, _ := http.Post(testServer.URL+"/posts", "application/json", bytes.NewBuffer(input))
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+}
+
+func TestPostDone(t *testing.T) {
+	initPostTable()
+	createDefaultPost(1, 1, 2)
+
+	inputPost := struct {
+		ID    int    `json:"id"`
+		Token string `json:"token"`
+	}{
+		1,
+		"testToken",
+	}
+	input, _ := json.Marshal(inputPost)
+
+	resp, _ := http.Post(testServer.URL+"/done", "application/json", bytes.NewBuffer(input))
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+}
+
+func TestPutDone(t *testing.T) {
+	initPostTable()
+	createDefaultPost(1, 1, 2)
+
+	inputPost := struct {
+		ID    int    `json:"id"`
+		Token string `json:"token"`
+	}{
+		1,
+		"testToken",
+	}
+	input, _ := json.Marshal(inputPost)
+
+	resp, _ := http.Post(testServer.URL+"/done", "application/json", bytes.NewBuffer(input))
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+}
+
+func createDefaultPost(id uint, userID uint, helpserUserID uint) entity.Post {
+	db := db.GetDB()
+	post := postDefault
+	post.ID = id
+	post.UserID = userID
+	post.HelperUserID = helpserUserID
+	db.Create(&post)
+	return post
 }
 
 func initPostTable() {

@@ -56,5 +56,11 @@ func router() *gin.Engine {
 		h.DELETE("/:id", controller.TakeHelpUser)
 	}
 
+	d := r.Group("/done")
+	{
+		d.POST("", controller.DonePayment)
+		d.PUT("/:id", controller.DoneAcceptance)
+	}
+
 	return r
 }
