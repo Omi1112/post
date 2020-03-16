@@ -1,18 +1,19 @@
 {
-    "auth": {
-      "ID": 1
-    },
-    "comments": [
-      { "id": 1, "body": "some comment", "postId": 1 }
-    ],
-    "users": [
-      { "id": 1, "name": "taro"},
-      { "id": 2, "name": "yamada"},
-      { "id": 3, "name": "itoko"},
-      { "id": 4, "name": "domi"},
-      { "id": 5, "name": "dami"}
-    ],
-    "profile": { "name": "test" },
-    "profile2": { "name": "test" },
-    "test": { "name": "typicode" }
+  "posts": [
+    {
+      "id": 1,
+      "title": "json-server",
+      "author": "typicode"
+    }
+  ],
+  "comments": [
+    {
+      "id": 1,
+      "body": "some comment",
+      "postId": 1
+    }
+  ],
+  "profile": {
+    "name": "typicode"
   }
+}
