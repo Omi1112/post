@@ -105,6 +105,41 @@ func (b Behavior) TakeHelpUserID(id string, token string) (entity.Post, error) {
 	return updatePostExec(&findPost)
 }
 
+// DonePayment 投稿情報を元に完了ステータスの登録とポイントの支払をする。
+func (b Behavior) DonePayment(id string, token string) (entity.Post, error) {
+	findPost, _, err := authAndGetPost(id, token)
+	if err != nil {
+		return entity.Post{}, err
+	}
+
+	if findPost.HelperUserID == 0 {
+		return entity.Post{}, errors.New("PostID:" + strconv.Itoa(int(findPost.ID)) + " Don't have helper")
+	}
+
+	// ポイント支払いのため、マイナスポイントを登録する。
+	createPoint(-int(findPost.Point), token)
+	findPost.Status = entity.Payment
+
+	return updatePostExec(&findPost)
+}
+
+// DoneAcceptance 投稿情報のHlpUserIDにTokenから取得したユーザＩＤを格納する。
+func (b Behavior) DoneAcceptance(id string, token string) (entity.Post, error) {
+	findPost, _, err := authAndGetPost(id, token)
+	if err != nil {
+		return entity.Post{}, err
+	}
+
+	if findPost.Status != entity.Payment {
+		return entity.Post{}, errors.New("PostID:" + strconv.Itoa(int(findPost.ID)) + " Status not payment")
+	}
+
+	createPoint(int(findPost.Point), token)
+	findPost.Status = entity.Acceptance
+
+	return updatePostExec(&findPost)
+}
+
 // GetByID IDを元に投稿1件を取得
 func (b Behavior) GetByID(id string) (entity.Post, error) {
 	db := db.GetDB()
@@ -204,6 +239,32 @@ func getUserIDByToken(token string) (int, error) {
 	}
 
 	return response.ID, nil
+}
+
+func createPoint(point int, token string) error {
+	input := struct {
+		Number int    `json:"number"`
+		Token  string `json:"token"`
+	}{
+		point,
+		token,
+	}
+	error := struct {
+		Error string
+	}{}
+
+	baseURL := os.Getenv("POINT_URL")
+	resp, err := napping.Post(baseURL+"/points", &input, nil, &error)
+
+	if err != nil {
+		return err
+	}
+
+	if resp.Status() == http.StatusBadRequest {
+		return errors.New("token invalid")
+	}
+
+	return nil
 }
 
 func attachUserData(posts []entity.Post) ([]entity.PostWithUser, error) {

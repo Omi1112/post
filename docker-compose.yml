@@ -26,6 +26,7 @@ services:
       DB_NAME: sample
       DB_ADDRESS: post-db:3306
       USER_URL: http://user:8080
+      POINT_URL: http://point:9000
     networks:
       - my_network
   post-db:
@@ -45,15 +46,23 @@ services:
     networks:
       - my_network
   post-mock-user:
-    build: ./docker/json-server
+    build: ./docker/json-server/user
     ports:
       - '3010:3000'
     volumes:
-      - ./docker/json-server/:/data/
+      - ./docker/json-server/user/:/data/
     command: json-server -w db.json --routes route.json -m middleware.js --host 0.0.0.0
     networks:
       - my_network
-
+  post-mock-point:
+    build: ./docker/json-server/point
+    ports:
+      - '3011:3000'
+    volumes:
+      - ./docker/json-server/point/:/data/
+    command: json-server -w db.json --routes route.json -m middleware.js --host 0.0.0.0
+    networks:
+      - my_network
 
 networks:
   my_network:

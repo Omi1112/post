@@ -17,6 +17,7 @@ import (
 var client = new(http.Client)
 var postDefault = entity.Post{Body: "test", Point: 100}
 var tmpBaseUserURL string
+var tmpBasePointURL string
 
 // テストを統括するテスト時には、これが実行されるイメージでいる。
 func TestMain(m *testing.M) {
@@ -31,16 +32,19 @@ func TestMain(m *testing.M) {
 // テスト実施前共通処理
 func setup() {
 	tmpBaseUserURL = os.Getenv("USER_URL")
+	tmpBasePointURL = os.Getenv("POINT_URL")
 	os.Setenv("USER_URL", "http://post-mock-user:3000")
+	os.Setenv("POINT_URL", "http://post-mock-point:3000")
 	db.Init()
 	initPostTable()
 }
 
 // テスト実施後共通処理
 func teardown() {
-	os.Setenv("USER_URL", tmpBaseUserURL)
 	initPostTable()
 	db.Close()
+	os.Setenv("USER_URL", tmpBaseUserURL)
+	os.Setenv("POINT_URL", tmpBasePointURL)
 }
 
 /*
@@ -49,8 +53,8 @@ func teardown() {
 
 func TestGetAll(t *testing.T) {
 	initPostTable()
-	createDefaultPost(1, 0)
-	createDefaultPost(1, 0)
+	createDefaultPost(0, 1, 0)
+	createDefaultPost(0, 1, 0)
 
 	var b Behavior
 	posts, err := b.GetAll()
@@ -60,8 +64,8 @@ func TestGetAll(t *testing.T) {
 
 func TestGetByHelperUserID(t *testing.T) {
 	initPostTable()
-	createDefaultPost(1, 1)
-	createDefaultPost(1, 2)
+	createDefaultPost(0, 1, 1)
+	createDefaultPost(0, 1, 2)
 
 	var b Behavior
 	posts, err := b.GetByHelperUserID("1")
@@ -71,7 +75,7 @@ func TestGetByHelperUserID(t *testing.T) {
 
 func TestAttachUserData(t *testing.T) {
 	initPostTable()
-	post := createDefaultPost(1, 0)
+	post := createDefaultPost(0, 1, 0)
 	var posts []entity.Post
 	posts = append(posts, post)
 
@@ -82,8 +86,8 @@ func TestAttachUserData(t *testing.T) {
 
 func TestGetByHelperUserIDWithUserData(t *testing.T) {
 	initPostTable()
-	createDefaultPost(1, 1)
-	createDefaultPost(1, 2)
+	createDefaultPost(0, 1, 1)
+	createDefaultPost(0, 1, 2)
 
 	var b Behavior
 	postsWithUser, err := b.GetByHelperUserIDWithUserData("1")
@@ -102,9 +106,34 @@ func TestValidCreateModel(t *testing.T) {
 	assert.NotEqual(t, uint(0), post.UserID)
 }
 
-func createDefaultPost(userID uint, helpserUserID uint) entity.Post {
+func TestDone(t *testing.T) {
+	initPostTable()
+	createDefaultPost(1, 2, 1)
+	var b Behavior
+	post, err := b.DonePayment("1", "testToken")
+
+	assert.Equal(t, nil, err)
+	assert.Equal(t, entity.Payment, post.Status)
+
+	post, err = b.DoneAcceptance("1", "testToken")
+	assert.Equal(t, nil, err)
+	assert.Equal(t, entity.Acceptance, post.Status)
+}
+
+func TestDoneAcceptanceErr(t *testing.T) {
+	initPostTable()
+	createDefaultPost(1, 2, 1)
+	var b Behavior
+	post, err := b.DoneAcceptance("1", "testToken")
+
+	assert.NotEqual(t, nil, err)
+	assert.NotEqual(t, entity.Payment, post.Status)
+}
+
+func createDefaultPost(id uint, userID uint, helpserUserID uint) entity.Post {
 	db := db.GetDB()
 	post := postDefault
+	post.ID = id
 	post.UserID = userID
 	post.HelperUserID = helpserUserID
 	db.Create(&post)

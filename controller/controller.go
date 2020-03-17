@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -114,7 +115,7 @@ func HelperShow(c *gin.Context) {
 
 // SetHelpUser action: Post /helper
 func SetHelpUser(c *gin.Context) {
-	id, token, err := helpUserGetData(c)
+	id, token, err := bindGetIDAndToken(c)
 	if err != nil {
 		return
 	}
@@ -133,7 +134,7 @@ func SetHelpUser(c *gin.Context) {
 // TakeHelpUser action: delete /helper
 func TakeHelpUser(c *gin.Context) {
 	id := c.Params.ByName("id")
-	_, token, err := helpUserGetData(c)
+	_, token, err := bindGetIDAndToken(c)
 	if err != nil {
 		return
 	}
@@ -149,7 +150,44 @@ func TakeHelpUser(c *gin.Context) {
 	}
 }
 
-func helpUserGetData(c *gin.Context) (string, string, error) {
+// DonePayment action: POST /done
+func DonePayment(c *gin.Context) {
+	id, token, err := bindGetIDAndToken(c)
+	if err != nil {
+		return
+	}
+
+	var b service.Behavior
+	p, err := b.DonePayment(id, token)
+
+	if err != nil {
+		c.AbortWithStatus(400)
+		fmt.Println(err)
+	} else {
+		c.JSON(http.StatusCreated, p)
+	}
+}
+
+// DoneAcceptance action: PUT /done
+func DoneAcceptance(c *gin.Context) {
+	id := c.Params.ByName("id")
+	_, token, err := bindGetIDAndToken(c)
+	if err != nil {
+		return
+	}
+
+	var b service.Behavior
+	p, err := b.DoneAcceptance(id, token)
+
+	if err != nil {
+		c.AbortWithStatus(400)
+		fmt.Println(err)
+	} else {
+		c.JSON(http.StatusCreated, p)
+	}
+}
+
+func bindGetIDAndToken(c *gin.Context) (string, string, error) {
 	type requestStru struct {
 		ID    float64 `json:"id"`
 		Token string  `json:"token"`
