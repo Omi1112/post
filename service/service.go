@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -177,6 +178,53 @@ func (b Behavior) DeleteByID(id string) error {
 	return nil
 }
 
+// GetAmountPaymentByUserID 現在の支払い可能ポイントを取得する。
+func (b Behavior) GetAmountPaymentByUserID(id string) (int, error) {
+	havePoint, err := getPointByUserID(id)
+	if err != nil {
+		return 0, err
+	}
+	fmt.Println(havePoint)
+
+	paymentPoint, err := getScheduledPaymentPointByUserID(id)
+	if err != nil {
+		return 0, err
+	}
+	fmt.Println(paymentPoint)
+
+	amountPayment := havePoint - paymentPoint
+	return amountPayment, nil
+}
+
+// getScheduledPaymentPointByUserID 投稿情報ステータスがNoneのポイントの集計を行う。
+func getScheduledPaymentPointByUserID(id string) (int, error) {
+	db := db.GetDB()
+	var point int
+
+	rows, err := db.Table("posts").
+		Select("sum(point) as total").
+		Where("user_id = ?", id).
+		Where("status = ?", entity.None).
+		Group("user_id").Rows()
+	defer rows.Close()
+
+	if err != nil {
+		return 0, err
+	}
+
+	// rows.Next()
+	for rows.Next() {
+		var test interface{}
+		// ScanRowsは1行をuserに変換します
+		db.ScanRows(rows, &test)
+		fmt.Println(test)
+
+		// 何らかの処理を行います
+	}
+
+	return point, nil
+}
+
 func getUsersData() map[int]*entity.User {
 	var response []map[string]interface{}
 	error := struct {
@@ -265,6 +313,28 @@ func createPoint(point int, token string) error {
 	}
 
 	return nil
+}
+
+func getPointByUserID(id string) (int, error) {
+	response := struct {
+		Total int `json:"total"`
+	}{}
+	error := struct {
+		Error string
+	}{}
+
+	baseURL := os.Getenv("POINT_URL")
+	resp, err := napping.Post(baseURL+"/sum/"+id, nil, &response, &error)
+
+	if err != nil {
+		return 0, err
+	}
+
+	if resp.Status() == http.StatusBadRequest {
+		return 0, errors.New("token invalid")
+	}
+
+	return response.Total, nil
 }
 
 func attachUserData(posts []entity.Post) ([]entity.PostWithUser, error) {

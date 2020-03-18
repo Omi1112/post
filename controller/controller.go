@@ -187,6 +187,27 @@ func DoneAcceptance(c *gin.Context) {
 	}
 }
 
+// AmountPayment action: GET /amount-payment
+func AmountPayment(c *gin.Context) {
+	id := c.Params.ByName("id")
+
+	var b service.Behavior
+	p, err := b.GetAmountPaymentByUserID(id)
+
+	response := struct {
+		AmountPayment int
+	}{
+		p,
+	}
+
+	if err != nil {
+		c.AbortWithStatus(400)
+		fmt.Println(err)
+	} else {
+		c.JSON(http.StatusOK, response)
+	}
+}
+
 func bindGetIDAndToken(c *gin.Context) (string, string, error) {
 	type requestStru struct {
 		ID    float64 `json:"id"`

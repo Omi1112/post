@@ -62,5 +62,10 @@ func router() *gin.Engine {
 		d.PUT("/:id", controller.DoneAcceptance)
 	}
 
+	a := r.Group("/amount")
+	{
+		a.GET("/:id", controller.AmountPayment)
+	}
+
 	return r
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/SeijiOmi/posts-service/db"
 	"github.com/SeijiOmi/posts-service/entity"
+	"github.com/jmcvetta/napping"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -130,6 +131,23 @@ func TestPutDone(t *testing.T) {
 
 	resp, _ := http.Post(testServer.URL+"/done", "application/json", bytes.NewBuffer(input))
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+}
+
+func TestSumGetByUserID(t *testing.T) {
+	response := struct {
+		AmountPayment int
+	}{}
+	error := struct {
+		Error string
+	}{}
+
+	initPostTable()
+	createDefaultPost(0, 1, 2)
+
+	resp, err := napping.Get(testServer.URL+"/amount/1", nil, &response, &error)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, http.StatusOK, resp.Status())
+	assert.NotEqual(t, 0, response.AmountPayment)
 }
 
 func createDefaultPost(id uint, userID uint, helpserUserID uint) entity.Post {
