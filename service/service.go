@@ -337,7 +337,18 @@ func attachUserData(posts []entity.Post) ([]entity.PostWithUser, error) {
 			idStr := strconv.Itoa(int(post.ID))
 			return []entity.PostWithUser{}, errors.New("postID:" + idStr + " don't have userID")
 		}
-		returnData = append(returnData, entity.PostWithUser{Post: post, User: *users[int(post.UserID)]})
+
+		user, ok := users[int(post.UserID)]
+		if !ok {
+			user = &entity.User{}
+		}
+
+		helperUser, ok := users[int(post.HelperUserID)]
+		if !ok {
+			helperUser = &entity.User{}
+		}
+
+		returnData = append(returnData, entity.PostWithUser{Post: post, User: *user, HelperUser: *helperUser})
 	}
 
 	return returnData, nil
