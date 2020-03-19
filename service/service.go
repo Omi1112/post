@@ -199,10 +199,9 @@ func (b Behavior) GetAmountPaymentByUserID(id string) (int, error) {
 // getScheduledPaymentPointByUserID 投稿情報ステータスがNoneのポイントの集計を行う。
 func getScheduledPaymentPointByUserID(id string) (int, error) {
 	db := db.GetDB()
-	var point int
 
 	rows, err := db.Table("posts").
-		Select("sum(point) as total").
+		Select("sum(point) as point").
 		Where("user_id = ?", id).
 		Where("status = ?", entity.None).
 		Group("user_id").Rows()
@@ -212,14 +211,9 @@ func getScheduledPaymentPointByUserID(id string) (int, error) {
 		return 0, err
 	}
 
-	// rows.Next()
+	var point int
 	for rows.Next() {
-		var test interface{}
-		// ScanRowsは1行をuserに変換します
-		db.ScanRows(rows, &test)
-		fmt.Println(test)
-
-		// 何らかの処理を行います
+		rows.Scan(&point)
 	}
 
 	return point, nil
@@ -324,7 +318,7 @@ func getPointByUserID(id string) (int, error) {
 	}{}
 
 	baseURL := os.Getenv("POINT_URL")
-	resp, err := napping.Post(baseURL+"/sum/"+id, nil, &response, &error)
+	resp, err := napping.Get(baseURL+"/sum/"+id, nil, &response, &error)
 
 	if err != nil {
 		return 0, err
