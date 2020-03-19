@@ -42,21 +42,31 @@ func (b Behavior) GetAllWithUserData() ([]entity.PostWithUser, error) {
 	return attachUserData(posts)
 }
 
-// GetByHelperUserID 投稿情報にユーザ情報を紐づけて取得
-func (b Behavior) GetByHelperUserID(userID string) ([]entity.Post, error) {
+// FindByColumn 指定されたcolumnで検索を行う。
+func (b Behavior) FindByColumn(column string, id string) ([]entity.Post, error) {
 	db := db.GetDB()
 	var post []entity.Post
 
-	if err := db.Where("helper_user_id = ?", userID).Find(&post).Error; err != nil {
+	if err := db.Where(column+" = ?", id).Find(&post).Error; err != nil {
 		return post, err
 	}
 
 	return post, nil
 }
 
-// GetByHelperUserIDWithUserData 投稿情報にユーザ情報を紐づけて取得
+// GetByHelperUserIDWithUserData 投稿情報にユーザ情報を紐づけて取得（ヘルパーユーザーIDで検索）
 func (b Behavior) GetByHelperUserIDWithUserData(userID string) ([]entity.PostWithUser, error) {
-	posts, err := b.GetByHelperUserID(userID)
+	posts, err := b.FindByColumn("helper_user_id", userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return attachUserData(posts)
+}
+
+// GetByUserIDWithUserData 投稿情報にユーザ情報を紐づけて取得（ユーザーIDで検索）
+func (b Behavior) GetByUserIDWithUserData(userID string) ([]entity.PostWithUser, error) {
+	posts, err := b.FindByColumn("user_id", userID)
 	if err != nil {
 		return nil, err
 	}

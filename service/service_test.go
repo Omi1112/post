@@ -62,15 +62,15 @@ func TestGetAll(t *testing.T) {
 	assert.Equal(t, len(posts), 2)
 }
 
-func TestGetByHelperUserID(t *testing.T) {
+func TestFindByColumn(t *testing.T) {
 	initPostTable()
 	createDefaultPost(0, 1, 1)
 	createDefaultPost(0, 1, 2)
 
 	var b Behavior
-	posts, err := b.GetByHelperUserID("1")
+	posts, err := b.FindByColumn("user_id", "1")
 	assert.Equal(t, nil, err)
-	assert.Equal(t, 1, len(posts))
+	assert.Equal(t, 2, len(posts))
 }
 
 func TestAttachUserData(t *testing.T) {
@@ -94,6 +94,20 @@ func TestGetByHelperUserIDWithUserData(t *testing.T) {
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 1, len(postsWithUser))
 	assert.NotEqual(t, "", postsWithUser[0].User.Name)
+	assert.NotEqual(t, "", postsWithUser[0].HelperUser.Name)
+}
+
+func TestGetUserIDWithUserData(t *testing.T) {
+	initPostTable()
+	createDefaultPost(0, 1, 1)
+	createDefaultPost(0, 2, 1)
+
+	var b Behavior
+	postsWithUser, err := b.GetByUserIDWithUserData("1")
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 1, len(postsWithUser))
+	assert.NotEqual(t, "", postsWithUser[0].User.Name)
+	assert.NotEqual(t, "", postsWithUser[0].HelperUser.Name)
 }
 
 func TestValidCreateModel(t *testing.T) {

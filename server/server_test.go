@@ -133,7 +133,7 @@ func TestPutDone(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 }
 
-func TestSumGetByUserID(t *testing.T) {
+func TestAmountGetByUserID(t *testing.T) {
 	response := struct {
 		AmountPayment int
 	}{}
@@ -148,6 +148,23 @@ func TestSumGetByUserID(t *testing.T) {
 	assert.Equal(t, nil, err)
 	assert.Equal(t, http.StatusOK, resp.Status())
 	assert.NotEqual(t, 0, response.AmountPayment)
+}
+
+func TestGetUserByID(t *testing.T) {
+	response := []entity.PostWithUser{}
+	error := struct {
+		Error string
+	}{}
+
+	initPostTable()
+	createDefaultPost(0, 1, 3)
+	createDefaultPost(0, 1, 3)
+	createDefaultPost(0, 2, 3)
+
+	resp, err := napping.Get(testServer.URL+"/user/1", nil, &response, &error)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, http.StatusOK, resp.Status())
+	assert.Equal(t, 2, len(response))
 }
 
 func createDefaultPost(id uint, userID uint, helpserUserID uint) entity.Post {

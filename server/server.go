@@ -49,6 +49,11 @@ func router() *gin.Engine {
 		p.DELETE("/:id", controller.Delete)
 	}
 
+	u := r.Group("/user")
+	{
+		u.GET("/:id", controller.UserShow)
+	}
+
 	h := r.Group("/helper")
 	{
 		h.GET("/:id", controller.HelperShow)
