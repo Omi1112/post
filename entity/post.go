@@ -16,7 +16,7 @@ const (
 type Post struct {
 	ID           uint   `json:"id"`
 	UserID       uint   `json:"userId"`
-	HelperUserID uint   `json:"helpserUserId"`
+	HelperUserID uint   `json:"helperUserId"`
 	Body         string `json:"body"`
 	Point        uint   `json:"point" binding:"numeric,min=0"`
 	Status       Status `json:"status"`
