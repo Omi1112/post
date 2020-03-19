@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -184,13 +183,11 @@ func (b Behavior) GetAmountPaymentByUserID(id string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	fmt.Println(havePoint)
 
 	paymentPoint, err := getScheduledPaymentPointByUserID(id)
 	if err != nil {
 		return 0, err
 	}
-	fmt.Println(paymentPoint)
 
 	amountPayment := havePoint - paymentPoint
 	return amountPayment, nil
