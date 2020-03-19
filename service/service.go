@@ -177,6 +177,45 @@ func (b Behavior) DeleteByID(id string) error {
 	return nil
 }
 
+// GetAmountPaymentByUserID 現在の支払い可能ポイントを取得する。
+func (b Behavior) GetAmountPaymentByUserID(id string) (int, error) {
+	havePoint, err := getPointByUserID(id)
+	if err != nil {
+		return 0, err
+	}
+
+	paymentPoint, err := getScheduledPaymentPointByUserID(id)
+	if err != nil {
+		return 0, err
+	}
+
+	amountPayment := havePoint - paymentPoint
+	return amountPayment, nil
+}
+
+// getScheduledPaymentPointByUserID 投稿情報ステータスがNoneのポイントの集計を行う。
+func getScheduledPaymentPointByUserID(id string) (int, error) {
+	db := db.GetDB()
+
+	rows, err := db.Table("posts").
+		Select("sum(point) as point").
+		Where("user_id = ?", id).
+		Where("status = ?", entity.None).
+		Group("user_id").Rows()
+	defer rows.Close()
+
+	if err != nil {
+		return 0, err
+	}
+
+	var point int
+	for rows.Next() {
+		rows.Scan(&point)
+	}
+
+	return point, nil
+}
+
 func getUsersData() map[int]*entity.User {
 	var response []map[string]interface{}
 	error := struct {
@@ -265,6 +304,28 @@ func createPoint(point int, token string) error {
 	}
 
 	return nil
+}
+
+func getPointByUserID(id string) (int, error) {
+	response := struct {
+		Total int `json:"total"`
+	}{}
+	error := struct {
+		Error string
+	}{}
+
+	baseURL := os.Getenv("POINT_URL")
+	resp, err := napping.Get(baseURL+"/sum/"+id, nil, &response, &error)
+
+	if err != nil {
+		return 0, err
+	}
+
+	if resp.Status() == http.StatusBadRequest {
+		return 0, errors.New("token invalid")
+	}
+
+	return response.Total, nil
 }
 
 func attachUserData(posts []entity.Post) ([]entity.PostWithUser, error) {

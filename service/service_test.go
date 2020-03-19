@@ -130,6 +130,32 @@ func TestDoneAcceptanceErr(t *testing.T) {
 	assert.NotEqual(t, entity.Payment, post.Status)
 }
 
+func TestGetAmountPaymentByUserID(t *testing.T) {
+	initPostTable()
+	createDefaultPost(0, 1, 2)
+	var b Behavior
+	amountPayment, err := b.GetAmountPaymentByUserID("1")
+
+	assert.Equal(t, nil, err)
+	assert.NotEqual(t, 0, amountPayment)
+}
+
+func TestGetScheduledPaymentPointByUserID(t *testing.T) {
+	initPostTable()
+	createDefaultPost(0, 1, 2)
+	payment, err := getScheduledPaymentPointByUserID("1")
+
+	assert.Equal(t, nil, err)
+	assert.Equal(t, int(postDefault.Point), payment)
+}
+
+func TestGetPointByUserID(t *testing.T) {
+	total, err := getPointByUserID("1")
+
+	assert.Equal(t, nil, err)
+	assert.NotEqual(t, 0, total)
+}
+
 func createDefaultPost(id uint, userID uint, helpserUserID uint) entity.Post {
 	db := db.GetDB()
 	post := postDefault
