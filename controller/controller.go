@@ -97,6 +97,22 @@ func Delete(c *gin.Context) {
 	}
 }
 
+// UserShow action: get /user/:id
+func UserShow(c *gin.Context) {
+	id := c.Params.ByName("id")
+
+	var b service.Behavior
+	fmt.Println(id)
+	p, err := b.GetByUserIDWithUserData(id)
+
+	if err != nil {
+		c.AbortWithStatus(400)
+		fmt.Println(err)
+	} else {
+		c.JSON(200, p)
+	}
+}
+
 // HelperShow action: get /helpser/:id
 func HelperShow(c *gin.Context) {
 	id := c.Params.ByName("id")
