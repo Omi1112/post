@@ -42,7 +42,6 @@ services:
       - "13306:3306"
     volumes:
       - ./docker/db/conf.d/my.cnf:/etc/mysql/conf.d/my.cnf
-      - ./logs:/var/log/mysql
     networks:
       - my_network
   post-mock-user:
