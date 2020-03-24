@@ -25,7 +25,7 @@ func (b Behavior) GetAll() ([]entity.Post, error) {
 	db := db.GetDB()
 	var post []entity.Post
 
-	if err := db.Find(&post).Error; err != nil {
+	if err := db.Order("id desc").Find(&post).Error; err != nil {
 		return nil, err
 	}
 
@@ -47,7 +47,7 @@ func (b Behavior) FindByColumn(column string, id string) ([]entity.Post, error) 
 	db := db.GetDB()
 	var post []entity.Post
 
-	if err := db.Where(column+" = ?", id).Find(&post).Error; err != nil {
+	if err := db.Where(column+" = ?", id).Order("id desc").Find(&post).Error; err != nil {
 		return post, err
 	}
 
