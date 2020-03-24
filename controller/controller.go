@@ -22,7 +22,7 @@ func Index(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		fmt.Println(err)
 	} else {
-		c.JSON(StatusOK, p)
+		c.JSON(http.StatusOK, p)
 	}
 }
 
@@ -61,7 +61,7 @@ func Show(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		fmt.Println(err)
 	} else {
-		c.JSON(StatusOK, p)
+		c.JSON(http.StatusOK, p)
 	}
 }
 
