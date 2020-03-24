@@ -127,11 +127,11 @@ func TestDone(t *testing.T) {
 	post, err := b.DonePayment("1", "testToken")
 
 	assert.Equal(t, nil, err)
-	assert.Equal(t, entity.Payment, post.Status)
+	assert.Equal(t, entity.Payment, post.Post.Status)
 
 	post, err = b.DoneAcceptance("1", "testToken")
 	assert.Equal(t, nil, err)
-	assert.Equal(t, entity.Acceptance, post.Status)
+	assert.Equal(t, entity.Acceptance, post.Post.Status)
 }
 
 func TestDoneAcceptanceErr(t *testing.T) {
@@ -141,7 +141,7 @@ func TestDoneAcceptanceErr(t *testing.T) {
 	post, err := b.DoneAcceptance("1", "testToken")
 
 	assert.NotEqual(t, nil, err)
-	assert.NotEqual(t, entity.Payment, post.Status)
+	assert.NotEqual(t, entity.Payment, post.Post.Status)
 }
 
 func TestGetAmountPaymentByUserID(t *testing.T) {

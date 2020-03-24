@@ -93,61 +93,81 @@ func (b Behavior) CreateModel(inputPost entity.Post, token string) (entity.Post,
 }
 
 // SetHelpUserID 投稿情報のHlpUserIDにTokenから取得したユーザＩＤを格納する。
-func (b Behavior) SetHelpUserID(id string, token string) (entity.Post, error) {
+func (b Behavior) SetHelpUserID(id string, token string) (entity.PostWithUser, error) {
 	findPost, userID, err := authAndGetPost(id, token)
 	if err != nil {
-		return entity.Post{}, err
+		return entity.PostWithUser{}, err
 	}
 
 	findPost.HelperUserID = uint(userID)
 
-	return updatePostExec(&findPost)
+	post, err := updatePostExec(&findPost)
+	if err != nil {
+		return entity.PostWithUser{}, err
+	}
+
+	return attachUserDataSingle(post)
 }
 
 // TakeHelpUserID 投稿情報のHlpUserIDにTokenから取得したユーザＩＤを格納する。
-func (b Behavior) TakeHelpUserID(id string, token string) (entity.Post, error) {
+func (b Behavior) TakeHelpUserID(id string, token string) (entity.PostWithUser, error) {
 	findPost, _, err := authAndGetPost(id, token)
 	if err != nil {
-		return entity.Post{}, err
+		return entity.PostWithUser{}, err
 	}
 	findPost.HelperUserID = 0
 
-	return updatePostExec(&findPost)
+	post, err := updatePostExec(&findPost)
+	if err != nil {
+		return entity.PostWithUser{}, err
+	}
+
+	return attachUserDataSingle(post)
 }
 
 // DonePayment 投稿情報を元に完了ステータスの登録とポイントの支払をする。
-func (b Behavior) DonePayment(id string, token string) (entity.Post, error) {
+func (b Behavior) DonePayment(id string, token string) (entity.PostWithUser, error) {
 	findPost, _, err := authAndGetPost(id, token)
 	if err != nil {
-		return entity.Post{}, err
+		return entity.PostWithUser{}, err
 	}
 
 	if findPost.HelperUserID == 0 {
-		return entity.Post{}, errors.New("PostID:" + strconv.Itoa(int(findPost.ID)) + " Don't have helper")
+		return entity.PostWithUser{}, errors.New("PostID:" + strconv.Itoa(int(findPost.ID)) + " Don't have helper")
 	}
 
 	// ポイント支払いのため、マイナスポイントを登録する。
 	createPoint(-int(findPost.Point), token)
 	findPost.Status = entity.Payment
 
-	return updatePostExec(&findPost)
+	post, err := updatePostExec(&findPost)
+	if err != nil {
+		return entity.PostWithUser{}, err
+	}
+
+	return attachUserDataSingle(post)
 }
 
 // DoneAcceptance 投稿情報のHlpUserIDにTokenから取得したユーザＩＤを格納する。
-func (b Behavior) DoneAcceptance(id string, token string) (entity.Post, error) {
+func (b Behavior) DoneAcceptance(id string, token string) (entity.PostWithUser, error) {
 	findPost, _, err := authAndGetPost(id, token)
 	if err != nil {
-		return entity.Post{}, err
+		return entity.PostWithUser{}, err
 	}
 
 	if findPost.Status != entity.Payment {
-		return entity.Post{}, errors.New("PostID:" + strconv.Itoa(int(findPost.ID)) + " Status not payment")
+		return entity.PostWithUser{}, errors.New("PostID:" + strconv.Itoa(int(findPost.ID)) + " Status not payment")
 	}
 
 	createPoint(int(findPost.Point), token)
 	findPost.Status = entity.Acceptance
 
-	return updatePostExec(&findPost)
+	post, err := updatePostExec(&findPost)
+	if err != nil {
+		return entity.PostWithUser{}, err
+	}
+
+	return attachUserDataSingle(post)
 }
 
 // GetByID IDを元に投稿1件を取得
@@ -336,6 +356,16 @@ func getPointByUserID(id string) (int, error) {
 	}
 
 	return response.Total, nil
+}
+
+func attachUserDataSingle(post entity.Post) (entity.PostWithUser, error) {
+	posts := []entity.Post{post}
+	postsWithUser, err := attachUserData(posts)
+	if err != nil {
+		return entity.PostWithUser{}, err
+	}
+
+	return postsWithUser[0], nil
 }
 
 func attachUserData(posts []entity.Post) ([]entity.PostWithUser, error) {
