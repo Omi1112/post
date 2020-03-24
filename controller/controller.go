@@ -19,10 +19,10 @@ func Index(c *gin.Context) {
 	p, err := b.GetAllWithUserData()
 
 	if err != nil {
-		c.AbortWithStatus(404)
+		c.AbortWithStatus(http.StatusBadRequest)
 		fmt.Println(err)
 	} else {
-		c.JSON(200, p)
+		c.JSON(StatusOK, p)
 	}
 }
 
@@ -44,10 +44,10 @@ func Create(c *gin.Context) {
 	createdPost, err := b.CreateModel(inputPost, token.Token)
 
 	if err != nil {
-		c.AbortWithStatus(400)
+		c.AbortWithStatus(http.StatusBadRequest)
 		fmt.Println(err)
 	} else {
-		c.JSON(201, createdPost)
+		c.JSON(http.StatusCreated, createdPost)
 	}
 }
 
@@ -58,10 +58,10 @@ func Show(c *gin.Context) {
 	p, err := b.GetByID(id)
 
 	if err != nil {
-		c.AbortWithStatus(404)
+		c.AbortWithStatus(http.StatusNotFound)
 		fmt.Println(err)
 	} else {
-		c.JSON(200, p)
+		c.JSON(StatusOK, p)
 	}
 }
 
@@ -77,10 +77,10 @@ func Update(c *gin.Context) {
 	p, err := b.UpdateByID(id, inputPost)
 
 	if err != nil {
-		c.AbortWithStatus(400)
+		c.AbortWithStatus(http.StatusBadRequest)
 		fmt.Println(err)
 	} else {
-		c.JSON(200, p)
+		c.JSON(http.StatusCreated, p)
 	}
 }
 
@@ -90,10 +90,10 @@ func Delete(c *gin.Context) {
 	var b service.Behavior
 
 	if err := b.DeleteByID(id); err != nil {
-		c.AbortWithStatus(403)
+		c.AbortWithStatus(http.StatusBadRequest)
 		fmt.Println(err)
 	} else {
-		c.JSON(204, gin.H{"id #" + id: "deleted"})
+		c.JSON(http.StatusCreated, gin.H{"id #" + id: "deleted"})
 	}
 }
 
@@ -106,10 +106,10 @@ func UserShow(c *gin.Context) {
 	p, err := b.GetByUserIDWithUserData(id)
 
 	if err != nil {
-		c.AbortWithStatus(400)
+		c.AbortWithStatus(http.StatusNotFound)
 		fmt.Println(err)
 	} else {
-		c.JSON(200, p)
+		c.JSON(http.StatusOK, p)
 	}
 }
 
@@ -122,10 +122,10 @@ func HelperShow(c *gin.Context) {
 	p, err := b.GetByHelperUserIDWithUserData(id)
 
 	if err != nil {
-		c.AbortWithStatus(400)
+		c.AbortWithStatus(http.StatusNotFound)
 		fmt.Println(err)
 	} else {
-		c.JSON(200, p)
+		c.JSON(http.StatusOK, p)
 	}
 }
 
@@ -140,10 +140,10 @@ func SetHelpUser(c *gin.Context) {
 	p, err := b.SetHelpUserID(id, token)
 
 	if err != nil {
-		c.AbortWithStatus(400)
+		c.AbortWithStatus(http.StatusBadRequest)
 		fmt.Println(err)
 	} else {
-		c.JSON(200, p)
+		c.JSON(http.StatusCreated, p)
 	}
 }
 
@@ -159,10 +159,10 @@ func TakeHelpUser(c *gin.Context) {
 	p, err := b.TakeHelpUserID(id, token)
 
 	if err != nil {
-		c.AbortWithStatus(400)
+		c.AbortWithStatus(http.StatusBadRequest)
 		fmt.Println(err)
 	} else {
-		c.JSON(200, p)
+		c.JSON(http.StatusCreated, p)
 	}
 }
 
@@ -177,7 +177,7 @@ func DonePayment(c *gin.Context) {
 	p, err := b.DonePayment(id, token)
 
 	if err != nil {
-		c.AbortWithStatus(400)
+		c.AbortWithStatus(http.StatusBadRequest)
 		fmt.Println(err)
 	} else {
 		c.JSON(http.StatusCreated, p)
@@ -196,7 +196,7 @@ func DoneAcceptance(c *gin.Context) {
 	p, err := b.DoneAcceptance(id, token)
 
 	if err != nil {
-		c.AbortWithStatus(400)
+		c.AbortWithStatus(http.StatusBadRequest)
 		fmt.Println(err)
 	} else {
 		c.JSON(http.StatusCreated, p)
@@ -217,7 +217,7 @@ func AmountPayment(c *gin.Context) {
 	}
 
 	if err != nil {
-		c.AbortWithStatus(400)
+		c.AbortWithStatus(http.StatusNotFound)
 		fmt.Println(err)
 	} else {
 		c.JSON(http.StatusOK, response)
@@ -243,7 +243,7 @@ func bindJSON(c *gin.Context, data interface{}) error {
 	b := string(buf[0:n])
 	c.Request.Body = ioutil.NopCloser(bytes.NewBuffer([]byte(b)))
 	if err := c.BindJSON(data); err != nil {
-		c.AbortWithStatus(400)
+		c.AbortWithStatus(http.StatusBadRequest)
 		fmt.Println("bind JSON err")
 		fmt.Println(err)
 		return err
