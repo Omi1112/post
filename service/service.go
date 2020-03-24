@@ -136,8 +136,7 @@ func (b Behavior) DonePayment(id string, token string) (entity.PostWithUser, err
 		return entity.PostWithUser{}, errors.New("PostID:" + strconv.Itoa(int(findPost.ID)) + " Don't have helper")
 	}
 
-	// ポイント支払いのため、マイナスポイントを登録する。
-	createPoint(-int(findPost.Point), token)
+
 	findPost.Status = entity.Payment
 
 	post, err := updatePostExec(&findPost)
@@ -145,7 +144,16 @@ func (b Behavior) DonePayment(id string, token string) (entity.PostWithUser, err
 		return entity.PostWithUser{}, err
 	}
 
-	return attachUserDataSingle(post)
+	postWithUser, err := attachUserDataSingle(post)
+	if err != nil {
+		return entity.PostWithUser{}, err
+	}
+
+	// ポイント支払いのため、マイナスポイントを登録する。
+	comment := postWithUser.HelperUser.Name + "さんが助けてくれました！"
+	createPoint(-int(findPost.Point), comment, token)
+
+	return postWithUser, nil
 }
 
 // DoneAcceptance 投稿情報のHlpUserIDにTokenから取得したユーザＩＤを格納する。
@@ -159,7 +167,6 @@ func (b Behavior) DoneAcceptance(id string, token string) (entity.PostWithUser, 
 		return entity.PostWithUser{}, errors.New("PostID:" + strconv.Itoa(int(findPost.ID)) + " Status not payment")
 	}
 
-	createPoint(int(findPost.Point), token)
 	findPost.Status = entity.Acceptance
 
 	post, err := updatePostExec(&findPost)
@@ -167,7 +174,15 @@ func (b Behavior) DoneAcceptance(id string, token string) (entity.PostWithUser, 
 		return entity.PostWithUser{}, err
 	}
 
-	return attachUserDataSingle(post)
+	postWithUser, err := attachUserDataSingle(post)
+	if err != nil {
+		return entity.PostWithUser{}, err
+	}
+
+	comment := postWithUser.User.Name + "さんを助けました！"
+	createPoint(int(findPost.Point), comment, token)
+
+	return postWithUser, nil
 }
 
 // GetByID IDを元に投稿1件を取得
@@ -310,12 +325,14 @@ func getUserIDByToken(token string) (int, error) {
 	return response.ID, nil
 }
 
-func createPoint(point int, token string) error {
+func createPoint(point int, comment string, token string) error {
 	input := struct {
 		Number int    `json:"number"`
+		Comment  string `json:"comment"`
 		Token  string `json:"token"`
 	}{
 		point,
+		comment,
 		token,
 	}
 	error := struct {
