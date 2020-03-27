@@ -16,7 +16,7 @@ var (
 	err error
 )
 
-// Init is initialize db from main function
+// Init DB接続設定
 func Init() {
 	DBMS := "mysql"
 	USER := os.Getenv("DB_USER")
@@ -34,12 +34,12 @@ func Init() {
 	autoMigration()
 }
 
-// GetDB is called in models
+// GetDB DB接続情報取得
 func GetDB() *gorm.DB {
 	return db
 }
 
-// Close is closing db
+// Close DB切断
 func Close() {
 	if err := db.Close(); err != nil {
 		panic(err)

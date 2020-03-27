@@ -10,26 +10,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-/*
-	テストの前準備
-*/
-
 var client = new(http.Client)
 var postDefault = entity.Post{Body: "test", Point: 100}
 var tmpBaseUserURL string
 var tmpBasePointURL string
 
-// テストを統括するテスト時には、これが実行されるイメージでいる。
 func TestMain(m *testing.M) {
-	// テスト実施前の共通処理（自作関数）
 	setup()
 	ret := m.Run()
-	// テスト実施後の共通処理（自作関数）
 	teardown()
 	os.Exit(ret)
 }
 
-// テスト実施前共通処理
 func setup() {
 	tmpBaseUserURL = os.Getenv("USER_URL")
 	tmpBasePointURL = os.Getenv("POINT_URL")
@@ -38,18 +30,12 @@ func setup() {
 	db.Init()
 	initPostTable()
 }
-
-// テスト実施後共通処理
 func teardown() {
 	initPostTable()
 	db.Close()
 	os.Setenv("USER_URL", tmpBaseUserURL)
 	os.Setenv("POINT_URL", tmpBasePointURL)
 }
-
-/*
-	ここからが個別のテスト実装
-*/
 
 func TestGetAll(t *testing.T) {
 	initPostTable()
