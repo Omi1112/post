@@ -2,20 +2,8 @@ version: '3'
 services:
   post:
     tty: true
-    # links:
-    #   - mysql
-    image: zemisemi/gin-template
+    build: ./docker/api
     working_dir: /go/src/github.com/SeijiOmi/posts-service
-    # entrypoint:
-    #   - dockerize
-    #   - -timeout
-    #   - 60s
-    #   - -wait
-    #   - tcp://mysql:3306
-    # command: gin -i --all run main.go
-    # build:
-    #   context: .
-    #   dockerfile: ./docker/api/Dockerfile
     ports:
       - "8090:8090"
     volumes:
@@ -37,7 +25,6 @@ services:
       MYSQL_USER: root
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: sample
-    # hostname: mysql
     ports:
       - "13306:3306"
     volumes:

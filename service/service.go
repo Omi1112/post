@@ -14,11 +14,11 @@ import (
 // Behavior 投稿サービスを提供するメソッド群
 type Behavior struct{}
 
-// User オブジェクト構造
-type User struct {
-	id   int
-	name string
-}
+// // User オブジェクト構造
+// type User struct {
+// 	id   int
+// 	name string
+// }
 
 // GetAll 投稿全件を取得
 func (b Behavior) GetAll() ([]entity.Post, error) {
@@ -42,7 +42,7 @@ func (b Behavior) GetAllWithUserData() ([]entity.PostWithUser, error) {
 	return attachUserData(posts)
 }
 
-// FindByColumn 指定されたcolumnで検索を行う。
+// FindByColumn 指定されたカラムで検索を行う。
 func (b Behavior) FindByColumn(column string, id string) ([]entity.Post, error) {
 	db := db.GetDB()
 	var post []entity.Post
@@ -135,7 +135,6 @@ func (b Behavior) DonePayment(id string, token string) (entity.PostWithUser, err
 	if findPost.HelperUserID == 0 {
 		return entity.PostWithUser{}, errors.New("PostID:" + strconv.Itoa(int(findPost.ID)) + " Don't have helper")
 	}
-
 
 	findPost.Status = entity.Payment
 
