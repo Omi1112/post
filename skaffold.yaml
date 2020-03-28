@@ -10,4 +10,4 @@ build:
 deploy:
   kubectl:
     manifests:
-      - post-*
+      - post-deployment.yaml
