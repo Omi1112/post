@@ -1,22 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: post-db
+  name: post-db-deployment
   labels:
-    app: post-db
+    back: post-db
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: post-db
+      back: post-db
   template:
     metadata:
       labels:
-        app: post-db
+        back: post-db
     spec:
-      hostname: post-db
       containers:
-      - name: mysql
+      - name: post-db
         image: mysql:8.0
         ports:
         - containerPort: 3306

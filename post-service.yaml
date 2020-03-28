@@ -3,9 +3,8 @@ kind: Service
 metadata:
   name: post
 spec:
-  type: LoadBalancer
   selector:
-    app: post
+    back: post
   ports:
   - port: 80
     targetPort: 8090

@@ -4,7 +4,7 @@ metadata:
   name: post-db
 spec:
   selector:
-    app: post-db
+    back: post-db
   ports:
   - port: 3306
     targetPort: 3306
