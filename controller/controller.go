@@ -28,7 +28,7 @@ func Index(c *gin.Context) {
 
 // Create action: POST /posts
 func Create(c *gin.Context) {
-	var inputPost entity.Post
+	var inputPost entity.JoinPost
 	if err := bindJSON(c, &inputPost); err != nil {
 		return
 	}
@@ -221,6 +221,36 @@ func AmountPayment(c *gin.Context) {
 		fmt.Println(err)
 	} else {
 		c.JSON(http.StatusOK, response)
+	}
+}
+
+// TagShow action: GET /tag/id
+func TagShow(c *gin.Context) {
+	id := c.Params.ByName("id")
+
+	var b service.Behavior
+	p, err := b.GetByTagIDWithUserData(id)
+
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		fmt.Println(err)
+	} else {
+		c.JSON(http.StatusOK, p)
+	}
+}
+
+// TagLike action: GET /tag/like
+func TagLike(c *gin.Context) {
+	id := c.Params.ByName("id")
+
+	var b service.Behavior
+	p, err := b.GetByTagIDWithUserData(id)
+
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		fmt.Println(err)
+	} else {
+		c.JSON(http.StatusOK, p)
 	}
 }
 

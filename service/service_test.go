@@ -1,8 +1,10 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/SeijiOmi/posts-service/db"
@@ -223,16 +225,36 @@ func TestGetPointByUserID(t *testing.T) {
 }
 
 func TestGetByTagIDWithUserData(t *testing.T) {
-	post := createDefaultPost(0, 1, 2)
+	initTable()
 	tag := createDefaultTag()
+	post := createDefaultPost(0, 1, 2)
 	createPostTagModel(post.ID, tag.ID)
-	tag = createDefaultTag()
+	post = createDefaultPost(0, 1, 2)
 	createPostTagModel(post.ID, tag.ID)
 
 	var b Behavior
-	posts, err := b.GetByTagIDWithUserData("1")
+	posts, err := b.GetByTagIDWithUserData(strconv.Itoa(int(tag.ID)))
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 2, len(posts))
+}
+
+func TestFindTagLikeBody(t *testing.T) {
+	initTable()
+	db := db.GetDB()
+	tag := entity.Tag{Body: "test1"}
+	db.Create(&tag)
+	tag = entity.Tag{Body: "1test"}
+	db.Create(&tag)
+	tag = entity.Tag{Body: "1test1"}
+	db.Create(&tag)
+	tag = entity.Tag{Body: "foo"}
+	db.Create(&tag)
+
+	var b Behavior
+	tags, err := b.FindTagLikeBody("test")
+	assert.Equal(t, nil, err)
+	fmt.Println(tags)
+	assert.Equal(t, 3, len(tags))
 }
 
 func createDefaultPost(id uint, userID uint, helpserUserID uint) entity.Post {
@@ -256,7 +278,7 @@ func createTestPostTag(postID uint, tagID uint) entity.PostTag {
 	db := db.GetDB()
 	createPostTag := entity.PostTag{
 		PostID: postID,
-		TagID: tagID,
+		TagID:  tagID,
 	}
 	db.Create(&createPostTag)
 	return createPostTag

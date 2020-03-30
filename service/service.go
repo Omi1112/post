@@ -288,6 +288,18 @@ func createTagModel(inputTag entity.Tag) (entity.Tag, error) {
 	return createTag, nil
 }
 
+// FindTagLikeBody Tag.BodyをLike検索する。
+func (b Behavior) FindTagLikeBody(body string) ([]entity.Tag, error) {
+	db := db.GetDB()
+	var tags []entity.Tag
+
+	if err := db.Where("body LIKE ?", "%"+body+"%").Find(&tags).Error; err != nil {
+		return []entity.Tag{}, err
+	}
+
+	return tags, nil
+}
+
 func getTagByBody(body string) (entity.Tag, error) {
 	db := db.GetDB()
 	var tag entity.Tag
@@ -303,7 +315,7 @@ func createPostTagModel(postID uint, tagID uint) error {
 	db := db.GetDB()
 	createPostTag := entity.PostTag{
 		PostID: postID,
-		TagID: tagID,
+		TagID:  tagID,
 	}
 	if err := db.Create(&createPostTag).Error; err != nil {
 		return err
@@ -401,9 +413,9 @@ func getUserIDByToken(token string) (int, error) {
 
 func createPoint(point int, comment string, token string) error {
 	input := struct {
-		Number int    `json:"number"`
-		Comment  string `json:"comment"`
-		Token  string `json:"token"`
+		Number  int    `json:"number"`
+		Comment string `json:"comment"`
+		Token   string `json:"token"`
 	}{
 		point,
 		comment,
