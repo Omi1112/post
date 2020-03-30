@@ -13,6 +13,7 @@ import (
 
 var (
 	db  *gorm.DB
+	tx  *gorm.DB
 	err error
 )
 
@@ -36,7 +37,28 @@ func Init() {
 
 // GetDB DB接続情報取得
 func GetDB() *gorm.DB {
+	if tx != nil {
+		return tx
+	}
 	return db
+}
+
+// StartBegin トランザクションを開始する。
+func StartBegin() *gorm.DB {
+	tx = db.Begin()
+	return tx
+}
+
+// StartBegin トランザクションを終了しロールバックする。
+func EndRollback() {
+	tx.Rollback()
+	tx = nil
+}
+
+// StartBegin トランザクションを終了しコミットする。
+func EndCommit() {
+	tx.Commit()
+	tx = nil
 }
 
 // Close DB切断
@@ -48,4 +70,6 @@ func Close() {
 
 func autoMigration() {
 	db.AutoMigrate(&entity.Post{})
+	db.AutoMigrate(&entity.Tag{})
+	db.AutoMigrate(&entity.PostTag{})
 }

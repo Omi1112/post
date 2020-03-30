@@ -14,12 +14,6 @@ import (
 // Behavior 投稿サービスを提供するメソッド群
 type Behavior struct{}
 
-// // User オブジェクト構造
-// type User struct {
-// 	id   int
-// 	name string
-// }
-
 // GetAll 投稿全件を取得
 func (b Behavior) GetAll() ([]entity.Post, error) {
 	db := db.GetDB()
@@ -74,22 +68,61 @@ func (b Behavior) GetByUserIDWithUserData(userID string) ([]entity.PostWithUser,
 	return attachUserData(posts)
 }
 
+// GetByTagIDWithUserData タグＩＤで投稿情報を検索する。（ヘルパーユーザーIDで検索）
+func (b Behavior) GetByTagIDWithUserData(tagID string) ([]entity.PostWithUser, error) {
+	db := db.GetDB()
+	rows, err := db.Table("posts").
+		Select("posts.*").
+		Joins("inner join post_tags on posts.id = post_tags.post_id").
+		Where("post_tags.tag_id = ?", tagID).
+		Rows()
+	defer rows.Close()
+	if err != nil {
+		return []entity.PostWithUser{}, err
+	}
+
+	var posts []entity.Post
+	for rows.Next() {
+		var post entity.Post
+		db.ScanRows(rows, &post)
+		posts = append(posts, post)
+	}
+
+	return attachUserData(posts)
+}
+
 // CreateModel 投稿情報の生成
-func (b Behavior) CreateModel(inputPost entity.Post, token string) (entity.Post, error) {
+func (b Behavior) CreateModel(inputPost entity.JoinPost, token string) (entity.JoinPost, error) {
 	userID, err := getUserIDByToken(token)
 	if err != nil {
-		return inputPost, err
+		return entity.JoinPost{}, err
 	}
-
-	createPost := inputPost
+	createPost := inputPost.Post
 	createPost.UserID = uint(userID)
-	db := db.GetDB()
 
-	if err := db.Create(&createPost).Error; err != nil {
-		return createPost, err
+	tx := db.StartBegin()
+
+	if err := tx.Create(&createPost).Error; err != nil {
+		db.EndRollback()
+		return entity.JoinPost{}, err
 	}
 
-	return createPost, nil
+	for _, inputTag := range inputPost.Tags {
+		tag, err := createTagModel(inputTag)
+		if err != nil {
+			db.EndRollback()
+			return entity.JoinPost{}, err
+		}
+
+		err = createPostTagModel(createPost.ID, tag.ID)
+		if err != nil {
+			db.EndRollback()
+			return entity.JoinPost{}, err
+		}
+	}
+
+	db.EndCommit()
+	return attachJoinDataSingle(createPost)
 }
 
 // SetHelpUserID 投稿情報のHlpUserIDにTokenから取得したユーザＩＤを格納する。
@@ -235,6 +268,48 @@ func (b Behavior) GetAmountPaymentByUserID(id string) (int, error) {
 
 	amountPayment := havePoint - paymentPoint
 	return amountPayment, nil
+}
+
+func createTagModel(inputTag entity.Tag) (entity.Tag, error) {
+	db := db.GetDB()
+	createTag := inputTag
+
+	// 既に存在するタグの場合そのデータを返却する。
+	tag, _ := getTagByBody(createTag.Body)
+	empty := entity.Tag{}
+	if tag != empty {
+		return tag, nil
+	}
+
+	if err := db.Create(&createTag).Error; err != nil {
+		return createTag, err
+	}
+
+	return createTag, nil
+}
+
+func getTagByBody(body string) (entity.Tag, error) {
+	db := db.GetDB()
+	var tag entity.Tag
+
+	if err := db.Where("body = ?", body).First(&tag).Error; err != nil {
+		return entity.Tag{}, err
+	}
+
+	return tag, nil
+}
+
+func createPostTagModel(postID uint, tagID uint) error {
+	db := db.GetDB()
+	createPostTag := entity.PostTag{
+		PostID: postID,
+		TagID: tagID,
+	}
+	if err := db.Create(&createPostTag).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // getScheduledPaymentPointByUserID 投稿情報ステータスがNoneのポイントの集計を行う。
@@ -408,4 +483,68 @@ func attachUserData(posts []entity.Post) ([]entity.PostWithUser, error) {
 	}
 
 	return returnData, nil
+}
+
+func attachJoinDataSingle(post entity.Post) (entity.JoinPost, error) {
+	posts := []entity.Post{post}
+	postJoinPost, err := attachJoinData(posts)
+	if err != nil {
+		return entity.JoinPost{}, err
+	}
+
+	return postJoinPost[0], nil
+}
+
+func attachJoinData(posts []entity.Post) ([]entity.JoinPost, error) {
+	users := getUsersData()
+
+	var returnData []entity.JoinPost
+	for _, post := range posts {
+		if post.UserID == 0 {
+			idStr := strconv.Itoa(int(post.ID))
+			return []entity.JoinPost{}, errors.New("postID:" + idStr + " don't have userID")
+		}
+
+		user, ok := users[int(post.UserID)]
+		if !ok {
+			user = &entity.User{}
+		}
+
+		helperUser, ok := users[int(post.HelperUserID)]
+		if !ok {
+			helperUser = &entity.User{}
+		}
+
+		tags, err := getTagByPostID(post.ID)
+		if err != nil {
+			return []entity.JoinPost{}, err
+		}
+
+		returnData = append(returnData, entity.JoinPost{Post: post, User: *user, HelperUser: *helperUser, Tags: tags})
+	}
+
+	return returnData, nil
+}
+
+func getTagByPostID(postID uint) ([]entity.Tag, error) {
+	db := db.GetDB()
+	rows, err := db.
+		Table("tags").
+		Select("tags.*").
+		Joins("inner join post_tags on tags.id = post_tags.tag_id").
+		Where("post_tags.post_id = ?", postID).
+		Rows()
+
+	if err != nil {
+		return []entity.Tag{}, err
+	}
+
+	var tags []entity.Tag
+	for rows.Next() {
+		var tag entity.Tag
+		db.ScanRows(rows, &tag)
+		tags = append(tags, tag)
+	}
+
+	return tags, nil
 }
