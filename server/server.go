@@ -75,11 +75,11 @@ func router() *gin.Engine {
 	t := r.Group("/tag")
 	l := t.Group("/like")
 	{
-		l.GET("/:id", controller.AmountPayment)
+		l.GET("/:id", controller.TagLike)
 	}
 	i := t.Group("/id")
 	{
-		i.GET("/:id", controller.AmountPayment)
+		i.GET("/:id", controller.TagShow)
 	}
 
 	return r

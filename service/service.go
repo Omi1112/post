@@ -13,6 +13,7 @@ import (
 
 // Behavior 投稿サービスを提供するメソッド群
 type Behavior struct{}
+
 var limit = 40
 
 // GetAll 投稿全件を取得
@@ -20,7 +21,7 @@ func (b Behavior) GetAll(offset int) ([]entity.Post, error) {
 	db := db.GetDB()
 	var post []entity.Post
 
-	if err := db.Offset(offset).limit(limit).Order("id desc").Find(&post).Error; err != nil {
+	if err := db.Offset(offset).Limit(limit).Order("id desc").Find(&post).Error; err != nil {
 		return nil, err
 	}
 
@@ -28,13 +29,13 @@ func (b Behavior) GetAll(offset int) ([]entity.Post, error) {
 }
 
 // GetAllWithUserData 投稿情報にユーザ情報を紐づけて取得
-func (b Behavior) GetAllWithUserData() ([]entity.PostWithUser, error) {
-	posts, err := b.GetAll()
+func (b Behavior) GetAllWithUserData(offset int) ([]entity.JoinPost, error) {
+	posts, err := b.GetAll(offset)
 	if err != nil {
 		return nil, err
 	}
 
-	return attachUserData(posts)
+	return attachJoinData(posts)
 }
 
 // FindByColumn 指定されたカラムで検索を行う。
@@ -42,7 +43,7 @@ func (b Behavior) FindByColumn(column string, id string, offset int) ([]entity.P
 	db := db.GetDB()
 	var post []entity.Post
 
-	if err := db.Offset(offset).limit(limit).Where(column+" = ?", id).Order("id desc").Find(&post).Error; err != nil {
+	if err := db.Offset(offset).Limit(limit).Where(column+" = ?", id).Order("id desc").Find(&post).Error; err != nil {
 		return post, err
 	}
 
@@ -50,38 +51,38 @@ func (b Behavior) FindByColumn(column string, id string, offset int) ([]entity.P
 }
 
 // GetByHelperUserIDWithUserData 投稿情報にユーザ情報を紐づけて取得（ヘルパーユーザーIDで検索）
-func (b Behavior) GetByHelperUserIDWithUserData(userID string) ([]entity.PostWithUser, error) {
-	posts, err := b.FindByColumn("helper_user_id", userID)
+func (b Behavior) GetByHelperUserIDWithUserData(userID string, offset int) ([]entity.JoinPost, error) {
+	posts, err := b.FindByColumn("helper_user_id", userID, offset)
 	if err != nil {
 		return nil, err
 	}
 
-	return attachUserData(posts)
+	return attachJoinData(posts)
 }
 
 // GetByUserIDWithUserData 投稿情報にユーザ情報を紐づけて取得（ユーザーIDで検索）
-func (b Behavior) GetByUserIDWithUserData(userID string) ([]entity.PostWithUser, error) {
-	posts, err := b.FindByColumn("user_id", userID)
+func (b Behavior) GetByUserIDWithUserData(userID string, offset int) ([]entity.JoinPost, error) {
+	posts, err := b.FindByColumn("user_id", userID, offset)
 	if err != nil {
 		return nil, err
 	}
 
-	return attachUserData(posts)
+	return attachJoinData(posts)
 }
 
 // GetByTagIDWithUserData タグＩＤで投稿情報を検索する。（ヘルパーユーザーIDで検索）
-func (b Behavior) GetByTagIDWithUserData(tagID string, offset int) ([]entity.PostWithUser, error) {
+func (b Behavior) GetByTagIDWithUserData(tagID string, offset int) ([]entity.JoinPost, error) {
 	db := db.GetDB()
 	rows, err := db.Table("posts").
 		Offset(offset).
-		limit(limit).
+		Limit(limit).
 		Select("posts.*").
 		Joins("inner join post_tags on posts.id = post_tags.post_id").
 		Where("post_tags.tag_id = ?", tagID).
 		Rows()
 	defer rows.Close()
 	if err != nil {
-		return []entity.PostWithUser{}, err
+		return []entity.JoinPost{}, err
 	}
 
 	var posts []entity.Post
@@ -91,7 +92,7 @@ func (b Behavior) GetByTagIDWithUserData(tagID string, offset int) ([]entity.Pos
 		posts = append(posts, post)
 	}
 
-	return attachUserData(posts)
+	return attachJoinData(posts)
 }
 
 // CreateModel 投稿情報の生成
@@ -129,95 +130,95 @@ func (b Behavior) CreateModel(inputPost entity.JoinPost, token string) (entity.J
 }
 
 // SetHelpUserID 投稿情報のHlpUserIDにTokenから取得したユーザＩＤを格納する。
-func (b Behavior) SetHelpUserID(id string, token string) (entity.PostWithUser, error) {
+func (b Behavior) SetHelpUserID(id string, token string) (entity.JoinPost, error) {
 	findPost, userID, err := authAndGetPost(id, token)
 	if err != nil {
-		return entity.PostWithUser{}, err
+		return entity.JoinPost{}, err
 	}
 
 	findPost.HelperUserID = uint(userID)
 
 	post, err := updatePostExec(&findPost)
 	if err != nil {
-		return entity.PostWithUser{}, err
+		return entity.JoinPost{}, err
 	}
 
-	return attachUserDataSingle(post)
+	return attachJoinDataSingle(post)
 }
 
 // TakeHelpUserID 投稿情報のHlpUserIDにTokenから取得したユーザＩＤを格納する。
-func (b Behavior) TakeHelpUserID(id string, token string) (entity.PostWithUser, error) {
+func (b Behavior) TakeHelpUserID(id string, token string) (entity.JoinPost, error) {
 	findPost, _, err := authAndGetPost(id, token)
 	if err != nil {
-		return entity.PostWithUser{}, err
+		return entity.JoinPost{}, err
 	}
 	findPost.HelperUserID = 0
 
 	post, err := updatePostExec(&findPost)
 	if err != nil {
-		return entity.PostWithUser{}, err
+		return entity.JoinPost{}, err
 	}
 
-	return attachUserDataSingle(post)
+	return attachJoinDataSingle(post)
 }
 
 // DonePayment 投稿情報を元に完了ステータスの登録とポイントの支払をする。
-func (b Behavior) DonePayment(id string, token string) (entity.PostWithUser, error) {
+func (b Behavior) DonePayment(id string, token string) (entity.JoinPost, error) {
 	findPost, _, err := authAndGetPost(id, token)
 	if err != nil {
-		return entity.PostWithUser{}, err
+		return entity.JoinPost{}, err
 	}
 
 	if findPost.HelperUserID == 0 {
-		return entity.PostWithUser{}, errors.New("PostID:" + strconv.Itoa(int(findPost.ID)) + " Don't have helper")
+		return entity.JoinPost{}, errors.New("PostID:" + strconv.Itoa(int(findPost.ID)) + " Don't have helper")
 	}
 
 	findPost.Status = entity.Payment
 
 	post, err := updatePostExec(&findPost)
 	if err != nil {
-		return entity.PostWithUser{}, err
+		return entity.JoinPost{}, err
 	}
 
-	postWithUser, err := attachUserDataSingle(post)
+	JoinPost, err := attachJoinDataSingle(post)
 	if err != nil {
-		return entity.PostWithUser{}, err
+		return entity.JoinPost{}, err
 	}
 
 	// ポイント支払いのため、マイナスポイントを登録する。
-	comment := postWithUser.HelperUser.Name + "さんが助けてくれました！"
+	comment := JoinPost.HelperUser.Name + "さんが助けてくれました！"
 	createPoint(-int(findPost.Point), comment, token)
 
-	return postWithUser, nil
+	return JoinPost, nil
 }
 
 // DoneAcceptance 投稿情報のHlpUserIDにTokenから取得したユーザＩＤを格納する。
-func (b Behavior) DoneAcceptance(id string, token string) (entity.PostWithUser, error) {
+func (b Behavior) DoneAcceptance(id string, token string) (entity.JoinPost, error) {
 	findPost, _, err := authAndGetPost(id, token)
 	if err != nil {
-		return entity.PostWithUser{}, err
+		return entity.JoinPost{}, err
 	}
 
 	if findPost.Status != entity.Payment {
-		return entity.PostWithUser{}, errors.New("PostID:" + strconv.Itoa(int(findPost.ID)) + " Status not payment")
+		return entity.JoinPost{}, errors.New("PostID:" + strconv.Itoa(int(findPost.ID)) + " Status not payment")
 	}
 
 	findPost.Status = entity.Acceptance
 
 	post, err := updatePostExec(&findPost)
 	if err != nil {
-		return entity.PostWithUser{}, err
+		return entity.JoinPost{}, err
 	}
 
-	postWithUser, err := attachUserDataSingle(post)
+	JoinPost, err := attachJoinDataSingle(post)
 	if err != nil {
-		return entity.PostWithUser{}, err
+		return entity.JoinPost{}, err
 	}
 
-	comment := postWithUser.User.Name + "さんを助けました！"
+	comment := JoinPost.User.Name + "さんを助けました！"
 	createPoint(int(findPost.Point), comment, token)
 
-	return postWithUser, nil
+	return JoinPost, nil
 }
 
 // GetByID IDを元に投稿1件を取得
@@ -462,42 +463,6 @@ func getPointByUserID(id string) (int, error) {
 	}
 
 	return response.Total, nil
-}
-
-func attachUserDataSingle(post entity.Post) (entity.PostWithUser, error) {
-	posts := []entity.Post{post}
-	postsWithUser, err := attachUserData(posts)
-	if err != nil {
-		return entity.PostWithUser{}, err
-	}
-
-	return postsWithUser[0], nil
-}
-
-func attachUserData(posts []entity.Post) ([]entity.PostWithUser, error) {
-	users := getUsersData()
-
-	var returnData []entity.PostWithUser
-	for _, post := range posts {
-		if post.UserID == 0 {
-			idStr := strconv.Itoa(int(post.ID))
-			return []entity.PostWithUser{}, errors.New("postID:" + idStr + " don't have userID")
-		}
-
-		user, ok := users[int(post.UserID)]
-		if !ok {
-			user = &entity.User{}
-		}
-
-		helperUser, ok := users[int(post.HelperUserID)]
-		if !ok {
-			helperUser = &entity.User{}
-		}
-
-		returnData = append(returnData, entity.PostWithUser{Post: post, User: *user, HelperUser: *helperUser})
-	}
-
-	return returnData, nil
 }
 
 func attachJoinDataSingle(post entity.Post) (entity.JoinPost, error) {

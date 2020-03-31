@@ -46,7 +46,7 @@ func TestGetAll(t *testing.T) {
 	post := createDefaultPost(0, 1, 2)
 
 	var b Behavior
-	posts, err := b.GetAll()
+	posts, err := b.GetAll(0)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, len(posts), 2)
 	// 最後に作成した投稿情報が先頭であることを確認
@@ -59,22 +59,11 @@ func TestFindByColumn(t *testing.T) {
 	post := createDefaultPost(0, 1, 2)
 
 	var b Behavior
-	posts, err := b.FindByColumn("user_id", "1")
+	posts, err := b.FindByColumn("user_id", "1", 0)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 2, len(posts))
 	// 最後に作成した投稿情報が先頭であることを確認
 	assert.Equal(t, post.ID, posts[0].ID)
-}
-
-func TestAttachUserData(t *testing.T) {
-	initPostTable()
-	post := createDefaultPost(0, 1, 0)
-	var posts []entity.Post
-	posts = append(posts, post)
-
-	postsWithUser, err := attachUserData(posts)
-	assert.Equal(t, nil, err)
-	assert.NotEqual(t, "", postsWithUser[0].User.Name)
 }
 
 func TestAttachJoinData(t *testing.T) {
@@ -123,7 +112,7 @@ func TestGetByHelperUserIDWithUserData(t *testing.T) {
 	createDefaultPost(0, 1, 2)
 
 	var b Behavior
-	postsWithUser, err := b.GetByHelperUserIDWithUserData("1")
+	postsWithUser, err := b.GetByHelperUserIDWithUserData("1", 0)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 1, len(postsWithUser))
 	assert.NotEqual(t, "", postsWithUser[0].User.Name)
@@ -136,7 +125,7 @@ func TestGetUserIDWithUserData(t *testing.T) {
 	createDefaultPost(0, 2, 1)
 
 	var b Behavior
-	postsWithUser, err := b.GetByUserIDWithUserData("1")
+	postsWithUser, err := b.GetByUserIDWithUserData("1", 0)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 1, len(postsWithUser))
 	assert.NotEqual(t, "", postsWithUser[0].User.Name)
@@ -233,7 +222,7 @@ func TestGetByTagIDWithUserData(t *testing.T) {
 	createPostTagModel(post.ID, tag.ID)
 
 	var b Behavior
-	posts, err := b.GetByTagIDWithUserData(strconv.Itoa(int(tag.ID)))
+	posts, err := b.GetByTagIDWithUserData(strconv.Itoa(int(tag.ID)), 0)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 2, len(posts))
 }

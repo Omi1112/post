@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/SeijiOmi/posts-service/db"
@@ -17,6 +19,7 @@ import (
 var client = new(http.Client)
 var testServer *httptest.Server
 var postDefault = entity.Post{Body: "test", Point: 100}
+var tagDefault = entity.Tag{Body: "test"}
 var tmpBaseUserURL string
 var tmpBasePointURL string
 
@@ -47,13 +50,18 @@ func teardown() {
 
 func TestPostCreate(t *testing.T) {
 	inputPost := struct {
-		Body  string `json:"body"`
-		Point uint   `json:"point"`
-		Token string `json:"token"`
+		Body  string       `json:"body"`
+		Point uint         `json:"point"`
+		Token string       `json:"token"`
+		Tags  []entity.Tag `json:"tags"`
 	}{
 		"tests",
 		100,
 		"tests",
+		[]entity.Tag{
+			{ID: 0, Body: "test"},
+			{ID: 0, Body: "test2"},
+		},
 	}
 	input, _ := json.Marshal(inputPost)
 	resp, _ := http.Post(testServer.URL+"/posts", "application/json", bytes.NewBuffer(input))
@@ -138,7 +146,11 @@ func TestAmountGetByUserID(t *testing.T) {
 }
 
 func TestGetUserByID(t *testing.T) {
-	response := []entity.PostWithUser{}
+	input := url.Values{
+		"offset": []string{"0"},
+	}
+
+	response := []entity.JoinPost{}
 	error := struct {
 		Error string
 	}{}
@@ -148,10 +160,51 @@ func TestGetUserByID(t *testing.T) {
 	createDefaultPost(0, 1, 3)
 	createDefaultPost(0, 2, 3)
 
-	resp, err := napping.Get(testServer.URL+"/user/1", nil, &response, &error)
+	resp, err := napping.Get(testServer.URL+"/user/1", &input, &response, &error)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, http.StatusOK, resp.Status())
 	assert.Equal(t, 2, len(response))
+}
+
+func TestGetTagByBody(t *testing.T) {
+	response := []entity.Tag{}
+	error := struct {
+		Error string
+	}{}
+
+	initTable()
+	createDefaultTag()
+
+	resp, err := napping.Get(testServer.URL+"/tag/like/te", nil, &response, &error)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, http.StatusOK, resp.Status())
+	assert.Equal(t, 1, len(response))
+
+	response = []entity.Tag{}
+	resp, err = napping.Get(testServer.URL+"/tag/like/", nil, &response, &error)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, http.StatusNotFound, resp.Status())
+	assert.Equal(t, 0, len(response))
+}
+
+func TestGetByTagID(t *testing.T) {
+	input := url.Values{
+		"offset": []string{"0"},
+	}
+	response := []entity.Tag{}
+	error := struct {
+		Error string
+	}{}
+
+	initTable()
+	tag := createDefaultTag()
+	post := createDefaultPost(0, 1, 2)
+	createTestPostTag(post.ID, tag.ID)
+
+	resp, err := napping.Get(testServer.URL+"/tag/id/"+strconv.Itoa(int(tag.ID)), &input, &response, &error)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, http.StatusOK, resp.Status())
+	assert.Equal(t, 1, len(response))
 }
 
 func createDefaultPost(id uint, userID uint, helpserUserID uint) entity.Post {
@@ -164,8 +217,41 @@ func createDefaultPost(id uint, userID uint, helpserUserID uint) entity.Post {
 	return post
 }
 
+func createDefaultTag() entity.Tag {
+	db := db.GetDB()
+	tag := tagDefault
+	db.Create(&tag)
+	return tag
+}
+
+func createTestPostTag(postID uint, tagID uint) entity.PostTag {
+	db := db.GetDB()
+	createPostTag := entity.PostTag{
+		PostID: postID,
+		TagID:  tagID,
+	}
+	db.Create(&createPostTag)
+	return createPostTag
+}
+
+func initTable() {
+	initPostTable()
+	initTagTable()
+	initPostTagsTable()
+}
+
 func initPostTable() {
 	db := db.GetDB()
 	var u entity.Post
 	db.Delete(&u)
+}
+func initTagTable() {
+	db := db.GetDB()
+	var t entity.Tag
+	db.Delete(&t)
+}
+func initPostTagsTable() {
+	db := db.GetDB()
+	var pt entity.PostTag
+	db.Delete(&pt)
 }
