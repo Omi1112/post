@@ -15,8 +15,9 @@ import (
 
 // Index action: GET /posts
 func Index(c *gin.Context) {
+	offset := bindGetOffset(c)
 	var b service.Behavior
-	p, err := b.GetAllWithUserData()
+	p, err := b.GetAllWithUserData(offset)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -100,10 +101,9 @@ func Delete(c *gin.Context) {
 // UserShow action: get /user/:id
 func UserShow(c *gin.Context) {
 	id := c.Params.ByName("id")
-
+	offset := bindGetOffset(c)
 	var b service.Behavior
-	fmt.Println(id)
-	p, err := b.GetByUserIDWithUserData(id)
+	p, err := b.GetByUserIDWithUserData(id, offset)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
@@ -116,10 +116,10 @@ func UserShow(c *gin.Context) {
 // HelperShow action: get /helpser/:id
 func HelperShow(c *gin.Context) {
 	id := c.Params.ByName("id")
+	offset := bindGetOffset(c)
 
 	var b service.Behavior
-	fmt.Println(id)
-	p, err := b.GetByHelperUserIDWithUserData(id)
+	p, err := b.GetByHelperUserIDWithUserData(id, offset)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
@@ -265,6 +265,18 @@ func bindGetIDAndToken(c *gin.Context) (string, string, error) {
 	}
 
 	return strconv.Itoa(int(request.ID)), request.Token, nil
+}
+
+func bindGetOffset(c *gin.Context) (int, error) {
+	type requestStru struct {
+		Offset float64 `json:"offset"`
+	}
+	var request requestStru
+	if err := bindJSON(c, &request); err != nil {
+		return 0, err
+	}
+
+	return int(request.Offset), nil
 }
 
 func bindJSON(c *gin.Context, data interface{}) error {

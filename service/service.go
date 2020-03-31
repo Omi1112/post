@@ -13,13 +13,14 @@ import (
 
 // Behavior 投稿サービスを提供するメソッド群
 type Behavior struct{}
+var limit = 40
 
 // GetAll 投稿全件を取得
-func (b Behavior) GetAll() ([]entity.Post, error) {
+func (b Behavior) GetAll(offset int) ([]entity.Post, error) {
 	db := db.GetDB()
 	var post []entity.Post
 
-	if err := db.Order("id desc").Find(&post).Error; err != nil {
+	if err := db.Offset(offset).limit(limit).Order("id desc").Find(&post).Error; err != nil {
 		return nil, err
 	}
 
@@ -37,11 +38,11 @@ func (b Behavior) GetAllWithUserData() ([]entity.PostWithUser, error) {
 }
 
 // FindByColumn 指定されたカラムで検索を行う。
-func (b Behavior) FindByColumn(column string, id string) ([]entity.Post, error) {
+func (b Behavior) FindByColumn(column string, id string, offset int) ([]entity.Post, error) {
 	db := db.GetDB()
 	var post []entity.Post
 
-	if err := db.Where(column+" = ?", id).Order("id desc").Find(&post).Error; err != nil {
+	if err := db.Offset(offset).limit(limit).Where(column+" = ?", id).Order("id desc").Find(&post).Error; err != nil {
 		return post, err
 	}
 
@@ -69,9 +70,11 @@ func (b Behavior) GetByUserIDWithUserData(userID string) ([]entity.PostWithUser,
 }
 
 // GetByTagIDWithUserData タグＩＤで投稿情報を検索する。（ヘルパーユーザーIDで検索）
-func (b Behavior) GetByTagIDWithUserData(tagID string) ([]entity.PostWithUser, error) {
+func (b Behavior) GetByTagIDWithUserData(tagID string, offset int) ([]entity.PostWithUser, error) {
 	db := db.GetDB()
 	rows, err := db.Table("posts").
+		Offset(offset).
+		limit(limit).
 		Select("posts.*").
 		Joins("inner join post_tags on posts.id = post_tags.post_id").
 		Where("post_tags.tag_id = ?", tagID).
