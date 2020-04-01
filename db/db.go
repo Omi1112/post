@@ -49,13 +49,13 @@ func StartBegin() *gorm.DB {
 	return tx
 }
 
-// StartBegin トランザクションを終了しロールバックする。
+// EndRollback トランザクションを終了しロールバックする。
 func EndRollback() {
 	tx.Rollback()
 	tx = nil
 }
 
-// StartBegin トランザクションを終了しコミットする。
+// EndCommit トランザクションを終了しコミットする。
 func EndCommit() {
 	tx.Commit()
 	tx = nil
