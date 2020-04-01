@@ -28,8 +28,8 @@ func (b Behavior) GetAll(offset int) ([]entity.Post, error) {
 	return post, nil
 }
 
-// GetAllWithUserData 投稿情報にユーザ情報を紐づけて取得
-func (b Behavior) GetAllWithUserData(offset int) ([]entity.JoinPost, error) {
+// GetAllAttachJoinData 投稿情報にユーザ情報を紐づけて取得
+func (b Behavior) GetAllAttachJoinData(offset int) ([]entity.JoinPost, error) {
 	posts, err := b.GetAll(offset)
 	if err != nil {
 		return nil, err
@@ -50,8 +50,8 @@ func (b Behavior) FindByColumn(column string, id string, offset int) ([]entity.P
 	return post, nil
 }
 
-// GetByHelperUserIDWithUserData 投稿情報にユーザ情報を紐づけて取得（ヘルパーユーザーIDで検索）
-func (b Behavior) GetByHelperUserIDWithUserData(userID string, offset int) ([]entity.JoinPost, error) {
+// GetByHelperUserIDAttachJoinData 投稿情報にユーザ情報を紐づけて取得（ヘルパーユーザーIDで検索）
+func (b Behavior) GetByHelperUserIDAttachJoinData(userID string, offset int) ([]entity.JoinPost, error) {
 	posts, err := b.FindByColumn("helper_user_id", userID, offset)
 	if err != nil {
 		return nil, err
@@ -60,8 +60,8 @@ func (b Behavior) GetByHelperUserIDWithUserData(userID string, offset int) ([]en
 	return attachJoinData(posts)
 }
 
-// GetByUserIDWithUserData 投稿情報にユーザ情報を紐づけて取得（ユーザーIDで検索）
-func (b Behavior) GetByUserIDWithUserData(userID string, offset int) ([]entity.JoinPost, error) {
+// GetByUserIDAttachJoinData 投稿情報にユーザ情報を紐づけて取得（ユーザーIDで検索）
+func (b Behavior) GetByUserIDAttachJoinData(userID string, offset int) ([]entity.JoinPost, error) {
 	posts, err := b.FindByColumn("user_id", userID, offset)
 	if err != nil {
 		return nil, err
@@ -70,13 +70,13 @@ func (b Behavior) GetByUserIDWithUserData(userID string, offset int) ([]entity.J
 	return attachJoinData(posts)
 }
 
-// GetByTagIDWithUserData タグＩＤで投稿情報を検索する。（ヘルパーユーザーIDで検索）
-func (b Behavior) GetByTagIDWithUserData(tagID string, offset int) ([]entity.JoinPost, error) {
+// GetByTagIDAttachJoinData タグＩＤで投稿情報を検索する。（ヘルパーユーザーIDで検索）
+func (b Behavior) GetByTagIDAttachJoinData(tagID string, offset int) ([]entity.JoinPost, error) {
 	db := db.GetDB()
 	rows, err := db.Table("posts").
 		Offset(offset).
 		Limit(limit).
-		Select("posts.*").
+		Select("distinct posts.*").
 		Joins("inner join post_tags on posts.id = post_tags.post_id").
 		Where("post_tags.tag_id = ?", tagID).
 		Rows()

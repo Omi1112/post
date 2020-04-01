@@ -15,12 +15,12 @@ import (
 
 // Index action: GET /posts
 func Index(c *gin.Context) {
-	offset, err := bindGetOffset(c)
+	offset, err := strconv.Atoi(c.Query("offset"))
 	if err != nil {
 		return
 	}
 	var b service.Behavior
-	p, err := b.GetAllWithUserData(offset)
+	p, err := b.GetAllAttachJoinData(offset)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -118,7 +118,7 @@ func UserShow(c *gin.Context) {
 	}
 
 	var b service.Behavior
-	p, err := b.GetByUserIDWithUserData(id, offset)
+	p, err := b.GetByUserIDAttachJoinData(id, offset)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
@@ -139,7 +139,7 @@ func HelperShow(c *gin.Context) {
 	}
 
 	var b service.Behavior
-	p, err := b.GetByHelperUserIDWithUserData(id, offset)
+	p, err := b.GetByHelperUserIDAttachJoinData(id, offset)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
@@ -152,6 +152,7 @@ func HelperShow(c *gin.Context) {
 // SetHelpUser action: Post /helper
 func SetHelpUser(c *gin.Context) {
 	id, token, err := bindGetIDAndToken(c)
+	fmt.Println(id)
 	if err != nil {
 		return
 	}
@@ -255,7 +256,7 @@ func TagShow(c *gin.Context) {
 	}
 
 	var b service.Behavior
-	p, err := b.GetByTagIDWithUserData(id, offset)
+	p, err := b.GetByTagIDAttachJoinData(id, offset)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
@@ -291,22 +292,6 @@ func bindGetIDAndToken(c *gin.Context) (string, string, error) {
 	}
 
 	return strconv.Itoa(int(request.ID)), request.Token, nil
-}
-
-func bindGetOffset(c *gin.Context) (int, error) {
-	type requestStru struct {
-		Offset float64 `json:"offset"`
-	}
-	// var request requestStru
-	var request interface{}
-	if err := bindJSON(c, &request); err != nil {
-		return 0, err
-	}
-
-	fmt.Println(request)
-
-	return 0, nil
-	// return int(request.Offset), nil
 }
 
 func bindJSON(c *gin.Context, data interface{}) error {

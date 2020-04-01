@@ -106,26 +106,26 @@ func TestGetTagByPostIDNoData(t *testing.T) {
 	assert.Equal(t, nil, err)
 }
 
-func TestGetByHelperUserIDWithUserData(t *testing.T) {
+func TestGetByHelperUserIDAttachJoinData(t *testing.T) {
 	initPostTable()
 	createDefaultPost(0, 1, 1)
 	createDefaultPost(0, 1, 2)
 
 	var b Behavior
-	postsWithUser, err := b.GetByHelperUserIDWithUserData("1", 0)
+	postsWithUser, err := b.GetByHelperUserIDAttachJoinData("1", 0)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 1, len(postsWithUser))
 	assert.NotEqual(t, "", postsWithUser[0].User.Name)
 	assert.NotEqual(t, "", postsWithUser[0].HelperUser.Name)
 }
 
-func TestGetUserIDWithUserData(t *testing.T) {
+func TestGetUserIDAttachJoinData(t *testing.T) {
 	initPostTable()
 	createDefaultPost(0, 1, 1)
 	createDefaultPost(0, 2, 1)
 
 	var b Behavior
-	postsWithUser, err := b.GetByUserIDWithUserData("1", 0)
+	postsWithUser, err := b.GetByUserIDAttachJoinData("1", 0)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 1, len(postsWithUser))
 	assert.NotEqual(t, "", postsWithUser[0].User.Name)
@@ -213,7 +213,7 @@ func TestGetPointByUserID(t *testing.T) {
 	assert.NotEqual(t, 0, total)
 }
 
-func TestGetByTagIDWithUserData(t *testing.T) {
+func TestGetByTagIDAttachJoinData(t *testing.T) {
 	initTable()
 	tag := createDefaultTag()
 	post := createDefaultPost(0, 1, 2)
@@ -222,7 +222,7 @@ func TestGetByTagIDWithUserData(t *testing.T) {
 	createPostTagModel(post.ID, tag.ID)
 
 	var b Behavior
-	posts, err := b.GetByTagIDWithUserData(strconv.Itoa(int(tag.ID)), 0)
+	posts, err := b.GetByTagIDAttachJoinData(strconv.Itoa(int(tag.ID)), 0)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 2, len(posts))
 }
