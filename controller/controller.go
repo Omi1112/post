@@ -15,8 +15,12 @@ import (
 
 // Index action: GET /posts
 func Index(c *gin.Context) {
+	offset, err := strconv.Atoi(c.Query("offset"))
+	if err != nil {
+		return
+	}
 	var b service.Behavior
-	p, err := b.GetAllWithUserData()
+	p, err := b.GetAllAttachJoinData(offset)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -32,6 +36,12 @@ func Create(c *gin.Context) {
 	if err := bindJSON(c, &inputPost); err != nil {
 		return
 	}
+	var inputJoinPost entity.JoinPost
+	if err := bindJSON(c, &inputJoinPost); err != nil {
+		return
+	}
+	inputJoinPost.Post = inputPost
+
 	type tokenStru struct {
 		Token string `json:"token"`
 	}
@@ -41,7 +51,7 @@ func Create(c *gin.Context) {
 	}
 
 	var b service.Behavior
-	createdPost, err := b.CreateModel(inputPost, token.Token)
+	createdPost, err := b.CreateModel(inputJoinPost, token.Token)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -100,10 +110,15 @@ func Delete(c *gin.Context) {
 // UserShow action: get /user/:id
 func UserShow(c *gin.Context) {
 	id := c.Params.ByName("id")
+	offset, err := strconv.Atoi(c.Query("offset"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		fmt.Println(err)
+		return
+	}
 
 	var b service.Behavior
-	fmt.Println(id)
-	p, err := b.GetByUserIDWithUserData(id)
+	p, err := b.GetByUserIDAttachJoinData(id, offset)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
@@ -116,10 +131,15 @@ func UserShow(c *gin.Context) {
 // HelperShow action: get /helpser/:id
 func HelperShow(c *gin.Context) {
 	id := c.Params.ByName("id")
+	offset, err := strconv.Atoi(c.Query("offset"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		fmt.Println(err)
+		return
+	}
 
 	var b service.Behavior
-	fmt.Println(id)
-	p, err := b.GetByHelperUserIDWithUserData(id)
+	p, err := b.GetByHelperUserIDAttachJoinData(id, offset)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
@@ -132,6 +152,7 @@ func HelperShow(c *gin.Context) {
 // SetHelpUser action: Post /helper
 func SetHelpUser(c *gin.Context) {
 	id, token, err := bindGetIDAndToken(c)
+	fmt.Println(id)
 	if err != nil {
 		return
 	}
@@ -221,6 +242,42 @@ func AmountPayment(c *gin.Context) {
 		fmt.Println(err)
 	} else {
 		c.JSON(http.StatusOK, response)
+	}
+}
+
+// TagShow action: GET /tag/id
+func TagShow(c *gin.Context) {
+	id := c.Params.ByName("id")
+	offset, err := strconv.Atoi(c.Query("offset"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		fmt.Println(err)
+		return
+	}
+
+	var b service.Behavior
+	p, err := b.GetByTagIDAttachJoinData(id, offset)
+
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		fmt.Println(err)
+	} else {
+		c.JSON(http.StatusOK, p)
+	}
+}
+
+// TagLike action: GET /tag/like
+func TagLike(c *gin.Context) {
+	id := c.Params.ByName("id")
+
+	var b service.Behavior
+	p, err := b.FindTagLikeBody(id)
+
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		fmt.Println(err)
+	} else {
+		c.JSON(http.StatusOK, p)
 	}
 }
 

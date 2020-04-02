@@ -72,5 +72,15 @@ func router() *gin.Engine {
 		a.GET("/:id", controller.AmountPayment)
 	}
 
+	t := r.Group("/tag")
+	l := t.Group("/like")
+	{
+		l.GET("/:id", controller.TagLike)
+	}
+	i := t.Group("/id")
+	{
+		i.GET("/:id", controller.TagShow)
+	}
+
 	return r
 }
